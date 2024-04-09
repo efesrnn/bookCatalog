@@ -1,6 +1,7 @@
 package com.example.bookcatalog;
 
 import javafx.application.Application;
+import javafx.application.Platform; //Layoutlar arası geçişin kusursuz olması için ekledim.
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -31,7 +32,6 @@ public class GUI extends Application {
         TableColumn<S, String> column = new TableColumn<>(title);
         column.setCellValueFactory(cellData -> {
             List<T> list = propertyValueFactory.apply(cellData.getValue());
-            // Convert the list to a comma-separated string for display
             String displayValue = list.stream()
                     .map(Object::toString)
                     .collect(Collectors.joining(", "));
@@ -40,10 +40,17 @@ public class GUI extends Application {
         return column;
     }
 
+    //COLUMN SIZE FITS 800x600
+    private void editColumnWidths(TableView<?> table, TableColumn<?, ?>[] columns, double widthPercentage) {
+        for (TableColumn<?, ?> column : columns) {
+            column.prefWidthProperty().bind(table.widthProperty().multiply(widthPercentage));
+        }
+    }
+
     @Override
     public void start(Stage stage) {
 
-        Label titleLabel = new Label("Book Catalog [v1.1] - Manage your book collection efficiently");
+        Label titleLabel = new Label("Book Catalog [v1.2] - Manage your book collection efficiently");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -77,13 +84,36 @@ public class GUI extends Application {
 
         //ADD BUTTON
         Button addButton = new Button("Add");
-        addButton.setOnAction(e->{ /*Henüz işlev yok*/ } );
+
 
         //EDIT BUTTON
         Button editButton = new Button("Edit");
         editButton.setOnAction(e->{ /*Henüz işlev yok*/ });
+        editButton.setStyle("-fx-font-weight: bold; ");
+
+
+        // DELETE BUTTON
+        String deleteButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #dc3545; -fx-text-fill: white;";
+        String deleteButtonHoverStyle = "-fx-background-color: #d9534f;"; // Mouse üzerine gelince
+        String deleteButtonArmedStyle = "-fx-background-color: #c82333;"; // Basıldığında
+
         Button deleteButton = new Button("Delete");
-        deleteButton.setOnAction(e->{ /*Henüz işlev yok*/ });
+        deleteButton.setStyle(deleteButtonBaseStyle);
+
+// Mouse üzerine geldiğinde
+        deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(deleteButtonBaseStyle + deleteButtonHoverStyle));
+// Mouse üzerinden ayrıldığında, hover stilini kaldır
+        deleteButton.setOnMouseExited(e -> deleteButton.setStyle(deleteButtonBaseStyle));
+// Mouse ile basıldığında
+        deleteButton.setOnMousePressed(e -> deleteButton.setStyle(deleteButtonBaseStyle + deleteButtonArmedStyle));
+// Mouse basılı tutulup bırakıldığında
+        deleteButton.setOnMouseReleased(e -> deleteButton.setStyle(deleteButtonBaseStyle + (deleteButton.isHover() ? deleteButtonHoverStyle : "")));
+
+        deleteButton.setOnAction(e -> {
+            // Delete işlevi şu anda yok.
+            System.out.println("Succesfully deleted.");
+        });
+
         HBox addEditBox = new HBox(10, addButton, editButton,deleteButton);
         addEditBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -122,19 +152,12 @@ public class GUI extends Application {
         TableColumn<Book, String> tagsColumn = createColumnForList("Tags", Book::getTags);
 
         //THE CODE FOR ALL TABLE ELEMENTS FITS IN LAYOUT
-        double titleColumnWidthPercentage = 0.083;
-        titleColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        subtitleColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        authorsColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        translatorsColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        isbnColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        publisherColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        publicationDateColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        editionColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        coverColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        languageColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        ratingColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
-        tagsColumn.prefWidthProperty().bind(bookTable.widthProperty().multiply(titleColumnWidthPercentage));
+        TableColumn<?, ?>[] columns = {
+                titleColumn, subtitleColumn, authorsColumn, translatorsColumn, isbnColumn, publisherColumn,
+                publicationDateColumn, editionColumn, coverColumn, languageColumn, ratingColumn, tagsColumn
+        };
+        editColumnWidths(bookTable, columns, 0.083);
+
 
         //COLUMN CREATION
         bookTable.getColumns().addAll(
@@ -151,9 +174,29 @@ public class GUI extends Application {
         mainLayout.setCenter(bookTable);
         mainLayout.setBottom(bottomLayout);
 
-        Scene scene = new Scene(mainLayout, 800, 600);
+        Scene mainScene = new Scene(mainLayout, 800, 600);
+        addButton.setOnAction(e -> {
+            // Kullanıcı ayarlarını koru
+            boolean isFullScreen = stage.isFullScreen();
+            double width = stage.getWidth();
+            double height = stage.getHeight();
+
+            // Yeni sahneyi göster
+            Transactions.showAddBookForm(stage, mainScene);
+
+            // Sahneyi yükledikten sonra kullanıcı ayarlarını geri yükle
+            Platform.runLater(() -> {
+                stage.setFullScreen(isFullScreen);
+                if (!isFullScreen) {
+                    // Tam ekran modu dışında, önceki boyutları geri yükle
+                    stage.setWidth(width);
+                    stage.setHeight(height);
+                }
+            });
+        });
+        addButton.setStyle("-fx-font-weight: bold; ");
         stage.setTitle("Book Catalog");
-        stage.setScene(scene);
+        stage.setScene(mainScene);
         stage.show();
 
     }
