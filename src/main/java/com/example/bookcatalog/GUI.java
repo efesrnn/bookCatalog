@@ -55,8 +55,10 @@ public class GUI extends Application {
         addButton.setOnAction(e->{ /*Henüz işlev yok*/ } );
         Button editButton = new Button("Edit");
         editButton.setOnAction(e->{ /*Henüz işlev yok*/ });
-        HBox addEditBox = new HBox(10, addButton, editButton);
-        addEditBox.setAlignment(Pos.CENTER);
+        Button deleteButton = new Button("Delete");
+        deleteButton.setOnAction(e->{ /*Henüz işlev yok*/ });
+        HBox addEditBox = new HBox(10, addButton, editButton,deleteButton);
+        addEditBox.setAlignment(Pos.CENTER_LEFT);
 
         //IMPORT & EXPORT JSON BUTTONS
         Button importButton = new Button("Import JSON");
@@ -64,7 +66,7 @@ public class GUI extends Application {
         Button exportButton = new Button("Export JSON");
         exportButton.setOnAction(e-> { /*Henüz işlev yok*/ });
         HBox jsonBox = new HBox(10, importButton, exportButton);
-        jsonBox.setAlignment(Pos.CENTER);
+        jsonBox.setAlignment(Pos.CENTER_RIGHT);
 
         VBox bottomLayout = new VBox(20, addEditBox, jsonBox);
         bottomLayout.setAlignment(Pos.CENTER);
