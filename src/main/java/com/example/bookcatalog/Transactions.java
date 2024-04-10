@@ -179,7 +179,8 @@ public class Transactions {
 
         HBox buttonBox = new HBox(20, saveButton, backButton);
         buttonBox.setAlignment(Pos.CENTER);
-        VBox.setMargin(buttonBox, new Insets(20, 0, 0, 0));
+        VBox.setMargin(buttonBox, new Insets(0, 0, 0, 0));
+
 
         VBox addLayoutALL = new VBox(20);
         addLayoutALL.getChildren().addAll(infoLabel, bookInfoEnteringField, buttonBox);
@@ -343,7 +344,9 @@ public class Transactions {
 
 
         // EDIT WINDOW LAYOUT
-        VBox mainLayout = new VBox(20, infoLabel, bookInfoEnteringField,saveButton,backButton);
+        HBox buttons = new HBox(20,saveButton,backButton);
+        buttons.setAlignment(Pos.BASELINE_CENTER);
+        VBox mainLayout = new VBox(20, infoLabel, bookInfoEnteringField,buttons);
         mainLayout.setAlignment(Pos.TOP_CENTER);
         mainLayout.setPadding(new Insets(10));
 
