@@ -3,6 +3,8 @@ package com.example.bookcatalog;
 import javafx.application.Application;
 import javafx.application.Platform; //Layoutlar arası geçişin kusursuz olması için ekledim.
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -17,7 +19,10 @@ import java.util.stream.Collectors;
 
 
 
+
 public class GUI extends Application {
+    public static ObservableList<Book> booksData = FXCollections.observableArrayList();
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -88,8 +93,7 @@ public class GUI extends Application {
 
         //EDIT BUTTON
         Button editButton = new Button("Edit");
-        editButton.setOnAction(e->{ /*Henüz işlev yok*/ });
-        editButton.setStyle("-fx-font-weight: bold; ");
+
 
 
         // DELETE BUTTON
@@ -100,19 +104,25 @@ public class GUI extends Application {
         Button deleteButton = new Button("Delete");
         deleteButton.setStyle(deleteButtonBaseStyle);
 
-// Mouse üzerine geldiğinde
+
+
+        //DELETE BUTTON ANIMATION
+
         deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(deleteButtonBaseStyle + deleteButtonHoverStyle));
-// Mouse üzerinden ayrıldığında, hover stilini kaldır
         deleteButton.setOnMouseExited(e -> deleteButton.setStyle(deleteButtonBaseStyle));
-// Mouse ile basıldığında
         deleteButton.setOnMousePressed(e -> deleteButton.setStyle(deleteButtonBaseStyle + deleteButtonArmedStyle));
-// Mouse basılı tutulup bırakıldığında
         deleteButton.setOnMouseReleased(e -> deleteButton.setStyle(deleteButtonBaseStyle + (deleteButton.isHover() ? deleteButtonHoverStyle : "")));
+
+
+        //DELETE BUTTON ACTION
 
         deleteButton.setOnAction(e -> {
             // Delete işlevi şu anda yok.
             System.out.println("Succesfully deleted.");
         });
+
+
+        //BOTTOM-UPPER BUTTONS HBOX (ADD-EDIT-DELETE)
 
         HBox addEditBox = new HBox(10, addButton, editButton,deleteButton);
         addEditBox.setAlignment(Pos.CENTER_LEFT);
@@ -122,21 +132,36 @@ public class GUI extends Application {
         importButton.setOnAction(e->{ /*Henüz işlev yok*/ });
         Button exportButton = new Button("Export JSON");
         exportButton.setOnAction(e-> { /*Henüz işlev yok*/ });
+
+
+
+        //BOTTOM-DEEPER BUTTONS HBOX (IMPORT-EXPORT)
+
         HBox jsonBox = new HBox(10, importButton, exportButton);
         jsonBox.setAlignment(Pos.CENTER_RIGHT);
+
+
+
+        //BOTTOM VBOX
 
         VBox bottomLayout = new VBox(20, addEditBox, jsonBox);
         bottomLayout.setAlignment(Pos.CENTER);
         bottomLayout.setPadding(new Insets(15, 20, 15, 20));
 
 
+
         //TABLE & COLUMNS
 
         //TABLEVIEW WITH NO COLUMNS
+
         TableView<Book> bookTable = new TableView<>();
         bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
+        bookTable.setItems(booksData);
+
+
 
         //SPESIFIC COLUMNS FOR ALL THE DATA WE'VE BEEN TOLD IN DESCRIBTION
+
         TableColumn<Book, String> titleColumn = createColumn("Title", Book::getTitle);
         TableColumn<Book, String> subtitleColumn = createColumn("Subtitle", Book::getSubtitle);
         TableColumn<Book, String> authorsColumn = createColumnForList("Authors", Book::getAuthors);
@@ -150,6 +175,8 @@ public class GUI extends Application {
         TableColumn<Book, String> ratingColumn = createColumn("Rating",
                 book -> String.format("%.1f", book.getRating())); //double problem yarattığı için String formatına çevirdik.
         TableColumn<Book, String> tagsColumn = createColumnForList("Tags", Book::getTags);
+
+
 
         //THE CODE FOR ALL TABLE ELEMENTS FITS IN LAYOUT
         TableColumn<?, ?>[] columns = {
@@ -169,22 +196,28 @@ public class GUI extends Application {
 
 
         //GUI within order
+
         BorderPane mainLayout = new BorderPane();
         mainLayout.setTop(combinedTopLayout);
         mainLayout.setCenter(bookTable);
         mainLayout.setBottom(bottomLayout);
 
         Scene mainScene = new Scene(mainLayout, 800, 600);
+
+
+        //ADD BUTTON ACTION
+
         addButton.setOnAction(e -> {
-            // Kullanıcı ayarlarını koru
+            //  2. bir layout oluşturmak yerine var olanı layout arasında geçiş yapabilmek için Add butonu
+            //  layoutu oluşturduktan sonra kullanılabilir hale geldi add butonun burda olmasının sebebi bu muhtemelen
+            //  edit butonu da daha sonra buraya gelecek
             boolean isFullScreen = stage.isFullScreen();
             double width = stage.getWidth();
             double height = stage.getHeight();
 
-            // Yeni sahneyi göster
-            Transactions.showAddBookForm(stage, mainScene);
+            Transactions.showAddBookSection(stage, mainScene);
 
-            // Sahneyi yükledikten sonra kullanıcı ayarlarını geri yükle
+            // layoutlar arası geçişte pencere boyutunu koruyo
             Platform.runLater(() -> {
                 stage.setFullScreen(isFullScreen);
                 if (!isFullScreen) {
@@ -195,9 +228,31 @@ public class GUI extends Application {
             });
         });
         addButton.setStyle("-fx-font-weight: bold; ");
+
+
         stage.setTitle("Book Catalog");
         stage.setScene(mainScene);
         stage.show();
 
+
+        //EDIT BUTTON ACTION
+        bookTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);//SELECTS ONLY ONE BOOK TO EDIT
+        editButton.setOnAction(e->{
+            Book selectedBook = bookTable.getSelectionModel().getSelectedItem();
+            if (selectedBook != null) {
+                Transactions.showEditBookSection(stage,mainScene,selectedBook);
+                bookTable.refresh();//CHANGES THE EDITED BOOK INFORMATION'S ON THE BOOK TABLE
+            }else{
+                Alert alert = new Alert(Alert.AlertType.WARNING,"Please select a book to edit");//IF THERE IS NO BOOK SELECTED ON TABLE THAN IT GET A WARNING
+                alert.showAndWait();
+            }
+        });
+
+
+
+
+
+
+        editButton.setStyle("-fx-font-weight: bold; ");
     }
 }
