@@ -93,8 +93,7 @@ public class GUI extends Application {
 
         //EDIT BUTTON
         Button editButton = new Button("Edit");
-        editButton.setOnAction(e->{ /*Henüz işlev yok*/ });
-        editButton.setStyle("-fx-font-weight: bold; ");
+
 
 
         // DELETE BUTTON
@@ -235,5 +234,24 @@ public class GUI extends Application {
         stage.setScene(mainScene);
         stage.show();
 
+
+        //EDIT BUTTON ACTION
+        bookTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        editButton.setOnAction(e->{
+            Book selectedBook = bookTable.getSelectionModel().getSelectedItem();
+            if (selectedBook != null) {
+                Transactions.showEditBookSection(stage,mainScene,selectedBook);
+            }else{
+                Alert alert = new Alert(Alert.AlertType.WARNING,"Please select a book to edit");
+                alert.showAndWait();
+            }
+        });
+
+
+
+
+
+
+        editButton.setStyle("-fx-font-weight: bold; ");
     }
 }
