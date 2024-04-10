@@ -11,11 +11,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 
 
@@ -55,7 +58,7 @@ public class GUI extends Application {
     @Override
     public void start(Stage stage) {
 
-        Label titleLabel = new Label("Book Catalog [v1.2] - Manage your book collection efficiently");
+        Label titleLabel = new Label("Book Catalog [v1.3] - Manage your book collection efficiently");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -74,6 +77,7 @@ public class GUI extends Application {
         TextField searchField = new TextField();
         searchField.setPromptText("Enter book title, author, or ISBN"); //Tıklayınca kaybolan yazı.
         Button searchButton = new Button("Search");
+        searchField.setMaxWidth(400);
         searchButton.setOnAction(e->{ /*Henüz işlev yok*/});
 
         VBox topLayout = new VBox(10, searchLabel, searchField, searchButton);
@@ -114,13 +118,6 @@ public class GUI extends Application {
         deleteButton.setOnMouseReleased(e -> deleteButton.setStyle(deleteButtonBaseStyle + (deleteButton.isHover() ? deleteButtonHoverStyle : "")));
 
 
-        //DELETE BUTTON ACTION
-
-        deleteButton.setOnAction(e -> {
-            // Delete işlevi şu anda yok.
-            System.out.println("Succesfully deleted.");
-        });
-
 
         //BOTTOM-UPPER BUTTONS HBOX (ADD-EDIT-DELETE)
 
@@ -157,6 +154,7 @@ public class GUI extends Application {
         TableView<Book> bookTable = new TableView<>();
         bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
         bookTable.setItems(booksData);
+        bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
 
 
@@ -196,10 +194,16 @@ public class GUI extends Application {
 
 
         //GUI within order
+        VBox tableContainer = new VBox(bookTable);
+        tableContainer.setAlignment(Pos.CENTER); // Center alignment inside the VBox
+        tableContainer.setPadding(new Insets(15)); // 10 pixels padding on all sides
+        VBox.setVgrow(bookTable, Priority.ALWAYS);
+
+        // Use this VBox as the center of the main layout
 
         BorderPane mainLayout = new BorderPane();
         mainLayout.setTop(combinedTopLayout);
-        mainLayout.setCenter(bookTable);
+        mainLayout.setCenter(tableContainer);
         mainLayout.setBottom(bottomLayout);
 
         Scene mainScene = new Scene(mainLayout, 800, 600);
@@ -235,15 +239,58 @@ public class GUI extends Application {
         stage.show();
 
 
-        //EDIT BUTTON ACTION
-        bookTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);//SELECTS ONLY ONE BOOK TO EDIT
-        editButton.setOnAction(e->{
-            Book selectedBook = bookTable.getSelectionModel().getSelectedItem();
-            if (selectedBook != null) {
-                Transactions.showEditBookSection(stage,mainScene,selectedBook);
-                bookTable.refresh();//CHANGES THE EDITED BOOK INFORMATION'S ON THE BOOK TABLE
-            }else{
-                Alert alert = new Alert(Alert.AlertType.WARNING,"Please select a book to edit");//IF THERE IS NO BOOK SELECTED ON TABLE THAN IT GET A WARNING
+        // EDIT BUTTON ACTION
+        editButton.setOnAction(e -> {
+            // Get all selected books
+            List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
+
+            // Check if exactly one book is selected
+            if (selectedBooks.size() == 1) {
+                Book selectedBook = selectedBooks.get(0); // Get the single selected book
+                Transactions.showEditBookSection(stage, mainScene, selectedBook);
+                bookTable.refresh(); // Refresh the TableView after editing
+            } else if (selectedBooks.isEmpty()) {
+                // No book selected
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a book from the table to edit.");
+                alert.showAndWait();
+            } else {
+                // More than one book selected
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Editing is only applicable to one selected book at a time.");
+                alert.showAndWait();
+            }
+        });
+
+
+
+
+        // DELETE BUTTON ACTION
+
+        deleteButton.setOnAction(e -> {
+            List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
+            if (!selectedBooks.isEmpty()) {
+                // Build a string with all selected book titles
+                String bookListString = selectedBooks.stream()
+                        .map(Book::getTitle)
+                        .collect(Collectors.joining(", "));
+
+                // Create and show confirmation alert with book titles
+                Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmationAlert.setTitle("Confirm Deletion");
+                confirmationAlert.setHeaderText("Are you sure you want to delete the selected books?");
+                confirmationAlert.setContentText("You are about to delete the following books: " + bookListString);
+
+                // Customize the button labels if desired
+                ButtonType delete2Button = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+                ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                confirmationAlert.getButtonTypes().setAll(delete2Button, cancelButton);
+
+                Optional<ButtonType> response = confirmationAlert.showAndWait();
+                if (response.isPresent() && response.get() == delete2Button) {
+                    Transactions.deleteBooks(stage, mainScene, selectedBooks);
+                    bookTable.refresh();  // görünümü refreshler
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select at least one book to delete.");
                 alert.showAndWait();
             }
         });
@@ -253,6 +300,11 @@ public class GUI extends Application {
 
 
 
+
+
+
+
         editButton.setStyle("-fx-font-weight: bold; ");
     }
+
 }
