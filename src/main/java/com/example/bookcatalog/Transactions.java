@@ -4,10 +4,7 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -94,6 +91,12 @@ public class Transactions {
         //SAVE BUTTON ACTION
 
         saveButton.setOnAction(e -> {
+            String isbn = fieldMap.get("ISBN").getText();
+            if (isbn.isEmpty()) {
+                // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
+                Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
+                alert.showAndWait();
+            } else {
             try {
                 String directoryPath = "books";
                 String randomUUID = UUID.randomUUID().toString();//INITIALIZING RANDOM UUID FOR "ISBN TO UUID" MAP
@@ -111,7 +114,6 @@ public class Transactions {
                 String subtitle = fieldMap.get("Subtitle").getText();
                 List<String> authors = Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"));
                 List<String> translators = Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*"));
-                String isbn = fieldMap.get("ISBN").getText();
                 String publisher = fieldMap.get("Publisher").getText();
                 String date = fieldMap.get("Date").getText();
                 String edition = fieldMap.get("Edition").getText();
@@ -157,7 +159,8 @@ public class Transactions {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        });
+        }}
+        );
 
 
         //BACK BUTTON CREATION AND ANIMATION
@@ -360,5 +363,31 @@ public class Transactions {
 
 
     }
+    public static void deleteBooks(Stage stage, Scene mainScene, List<Book> selectedBooks) {
+        selectedBooks.forEach(book -> {
+            String uuid = isbnToUuidMap.get(book.getIsbn()); // Kitabın ISBN numarasına göre UUID'yi alıyo
+            if (uuid != null) {
+                try {
+                    String directoryPath = "books";
+                    String filePath = directoryPath + "/" + uuid + ".json";
+                    Files.deleteIfExists(Paths.get(filePath)); // UUID'ye ait dosyayı siliyo
+                    System.out.println("Successfully deleted: " + filePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred while trying to delete the book.");
+                        alert.showAndWait();
+                    });
+                }
+            }
+        });
+        Platform.runLater(() -> {
+            GUI.booksData.removeAll(selectedBooks);// GUI'den kitapları kaldırma burda table view refresh actionda
+            stage.setScene(mainScene);
+        });
+    }
+
+
+
 
 }
