@@ -24,7 +24,10 @@ import java.util.*;
 
 public class Transactions {
 
-    public static Map<String, String> isbnToUuidMap = new HashMap<>();
+    public static Map<String, String> isbnToUuidMap = new HashMap<>();//IN ADD METHOD , WE CREATE AN RANDOM UUID NUMBER
+                                                                      //TO CREATE A UNIQUE JSON FILE NAME
+                                                                      //FOR EDITING,WE MUST LOCATE THIS UUID NUMBER
+                                                                      //SO WE CREATE A MAP WHICH ITS KEY IS THE ADDED BOOKS ISBN NUMBER AND VALUE IS UUID NUMBER
 
     private static double safeParseDouble(String str) {
         try {
@@ -93,7 +96,7 @@ public class Transactions {
         saveButton.setOnAction(e -> {
             try {
                 String directoryPath = "books";
-                String randomUUID = UUID.randomUUID().toString();
+                String randomUUID = UUID.randomUUID().toString();//INITIALIZING RANDOM UUID FOR "ISBN TO UUID" MAP
                 String fileName = directoryPath + "/" + randomUUID + ".json";
 
                 java.nio.file.Path path = Paths.get(directoryPath);
@@ -137,7 +140,7 @@ public class Transactions {
                 bookJson.put("tags", new JSONArray(tags));
 
 
-                //
+                //PUT THE NEW BOOK'S ISBN AS KEY AND ITS JSON UUID NUMBER AS VALUE IN "ISBN TO VALUE"
                 isbnToUuidMap.put(isbn, randomUUID);
                 //FILE OUTPUT
 
@@ -195,6 +198,7 @@ public class Transactions {
 
     public static void showEditBookSection(Stage stage, Scene mainScene, Book selectedBook) {
 
+        //EDIT PAGE LAYOUT INSTALLATIONS
         Label infoLabel = new Label("Please edit the information about the book");
         infoLabel.setWrapText(true);
         infoLabel.setMaxWidth(700);
@@ -208,12 +212,12 @@ public class Transactions {
         Map<String, TextField> fieldMap = new HashMap<>();
         String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover", "Language", "Rating", "Tags"};
 
-        // Döngü kullanarak her bir alan için bir Label ve TextField oluşturun ve önceden doldurun
+        // CREATE EACH ATTRIBUTE'S LABEL AND TEXT FIELD BY LOOP
         for (String fieldName : fieldNames) {
             TextField textField = new TextField();
             textField.setPrefWidth(600);
 
-            // Seçilen kitabın ilgili alanını textField'a yerleştirin
+            // FILL THE TEXT FIELDS BY SELECTED BOOK'S INFORMATION'S
             switch (fieldName) {
                 case "Title":
                     textField.setText(selectedBook.getTitle());
@@ -253,6 +257,7 @@ public class Transactions {
                     break;
             }
 
+            //TEXT FIELDS LAYOUT
             fieldMap.put(fieldName, textField);
             Label label = new Label(fieldName + ":");
             label.setMinWidth(60);
@@ -261,11 +266,24 @@ public class Transactions {
             bookInfoEnteringField.getChildren().add(hbox);
         }
 
-        // Save ve Back butonları için kod burada olacak
+        //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
+        String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
+        String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Mouse üzerine gelince
+
+        String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
+        String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Mouse üzerine gelince
+
+        //SAVE BUTTON FOR EDIT
 
         Button saveButton = new Button("Save");
+        saveButton.setStyle(saveButtonBaseStyle);
+        saveButton.setOnMouseEntered(e -> saveButton.setStyle(saveButtonBaseStyle + saveButtonHoverStyle));
+        saveButton.setOnMouseExited(e -> saveButton.setStyle(saveButtonBaseStyle));
+
 
         saveButton.setOnAction(e->{
+
+            //REACHING THE TEXT FIELDS THAT USER FILL BY USING MAP(SAME AS ADD METHOD)
 
             selectedBook.setTitle(fieldMap.get("Title").getText());
             selectedBook.setSubtitle(fieldMap.get("Subtitle").getText());
@@ -282,6 +300,7 @@ public class Transactions {
 
 
             try {
+               //CREATING A JSON OBJECT TO HOLD NEW INPUTS
                 JSONObject bookJson = new JSONObject();
                 bookJson.put("title",selectedBook.getTitle());
                 bookJson.put("subtitle",selectedBook.getSubtitle());
@@ -297,6 +316,7 @@ public class Transactions {
                 bookJson.put("tags", new JSONArray(selectedBook.getTags()));
 
 
+                //BY BOOK'S ISBN NUMBER, THE SOFTWARE FINDS THE JSON FILE NAME(BY "ISBN TO UUID" MAP)
                 String directoryPath = "books";
                 String filePath = directoryPath+ "/"+ isbnToUuidMap.get(selectedBook.getIsbn()) + ".json";
                 Files.write(Paths.get(filePath), bookJson.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -305,17 +325,24 @@ public class Transactions {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+
             stage.setScene(mainScene);
 
         });
+
+        //BACK BUTTON FOR EDIT
+
         Button backButton = new Button("Back");
+        backButton.setStyle(backButtonBaseStyle);
+        backButton.setOnMouseEntered(e -> backButton.setStyle(backButtonBaseStyle + backButtonHoverStyle));
+        backButton.setOnMouseExited(e -> backButton.setStyle(backButtonBaseStyle));
 
         backButton.setOnAction(e -> {
             stage.setScene(mainScene);
         });
 
 
-        // Kitap bilgi girişi ve butonlar dahil tüm bileşenleri içeren ana düzeni oluşturun
+        // EDIT WINDOW LAYOUT
         VBox mainLayout = new VBox(20, infoLabel, bookInfoEnteringField,saveButton,backButton);
         mainLayout.setAlignment(Pos.TOP_CENTER);
         mainLayout.setPadding(new Insets(10));

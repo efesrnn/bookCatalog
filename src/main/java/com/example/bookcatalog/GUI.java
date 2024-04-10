@@ -236,13 +236,14 @@ public class GUI extends Application {
 
 
         //EDIT BUTTON ACTION
-        bookTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        bookTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);//SELECTS ONLY ONE BOOK TO EDIT
         editButton.setOnAction(e->{
             Book selectedBook = bookTable.getSelectionModel().getSelectedItem();
             if (selectedBook != null) {
                 Transactions.showEditBookSection(stage,mainScene,selectedBook);
+                bookTable.refresh();//CHANGES THE EDITED BOOK INFORMATION'S ON THE BOOK TABLE
             }else{
-                Alert alert = new Alert(Alert.AlertType.WARNING,"Please select a book to edit");
+                Alert alert = new Alert(Alert.AlertType.WARNING,"Please select a book to edit");//IF THERE IS NO BOOK SELECTED ON TABLE THAN IT GET A WARNING
                 alert.showAndWait();
             }
         });
