@@ -7,9 +7,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,11 +42,13 @@ public class Transactions {
     public static void showAddBookSection(Stage stage, Scene mainScene) {
 
 
+
         Label infoLabel = new Label("Please enter all the information about the book you want to add.");
         infoLabel.setWrapText(true); //layout değişikliğinde yazının satır atlaması ve resize işlemleri
         infoLabel.setMaxWidth(700); // yazının max genişliği
         infoLabel.setAlignment(Pos.TOP_CENTER);
-        infoLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10;"); //css ile görünüm iyileştirme
+        infoLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10px;");
+        //css ile görünüm iyileştirme
 
 
         //NEW VBOX FOR BODY (TO INCLUDE TEXT FIELD AND LABELS)
@@ -74,10 +81,11 @@ public class Transactions {
         //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
 
         String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
-        String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Mouse üzerine gelince
+        String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Lighter green when hovered
 
         String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
-        String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Mouse üzerine gelince
+        String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Lighter orange when hovered
+
 
 
         //SAVE BUTTON CREATION AND ANIMATION
@@ -96,70 +104,78 @@ public class Transactions {
                 // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
                 alert.showAndWait();
-            } else {
-            try {
-                String directoryPath = "books";
-                String randomUUID = UUID.randomUUID().toString();//INITIALIZING RANDOM UUID FOR "ISBN TO UUID" MAP
-                String fileName = directoryPath + "/" + randomUUID + ".json";
-
-                java.nio.file.Path path = Paths.get(directoryPath);
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path);
-                }
-
-
-                //REACHING THE TEXTFIELDS THAT USER FILL BY USING MAP
-
-                String title = fieldMap.get("Title").getText();
-                String subtitle = fieldMap.get("Subtitle").getText();
-                List<String> authors = Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"));
-                List<String> translators = Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*"));
-                String publisher = fieldMap.get("Publisher").getText();
-                String date = fieldMap.get("Date").getText();
-                String edition = fieldMap.get("Edition").getText();
-                String cover = fieldMap.get("Cover").getText();
-                String language = fieldMap.get("Language").getText();
-                double rating = safeParseDouble(fieldMap.get("Rating").getText());
-                List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
-
-
-                //CREATING THE JSON FILE VIA INFO WE GET FROM TEXT FIELDS
-
-                Book newBook = new Book(title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
-
-                JSONObject bookJson = new JSONObject();
-                bookJson.put("title", title);
-                bookJson.put("subtitle", subtitle);
-                bookJson.put("authors", new JSONArray(authors));
-                bookJson.put("translators", new JSONArray(translators));
-                bookJson.put("isbn", isbn);
-                bookJson.put("publisher", publisher);
-                bookJson.put("date", date);
-                bookJson.put("edition", edition);
-                bookJson.put("cover", cover);
-                bookJson.put("language", language);
-                bookJson.put("rating", rating);
-                bookJson.put("tags", new JSONArray(tags));
-
-
-                //PUT THE NEW BOOK'S ISBN AS KEY AND ITS JSON UUID NUMBER AS VALUE IN "ISBN TO VALUE"
-                isbnToUuidMap.put(isbn, randomUUID);
-                //FILE OUTPUT
-
-                Files.write(Paths.get(fileName), bookJson.toString().getBytes(), StandardOpenOption.CREATE_NEW);
-                System.out.println("Successfully saved to " + fileName);
-
-
-
-                //UPDATING THE BOOK TABLE -TABLEVIEW-
-
-                Platform.runLater(() -> GUI.booksData.add(newBook));
-
-                stage.setScene(mainScene);
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } else if (isbn.length() > 13) { Alert alert = new Alert(Alert.AlertType.WARNING,
+                    //ISBN 13 rakamdan fazlaysa uyar.
+                    "ISBN cannot be more than 13-digit value.");
+                alert.showAndWait();
+            }else if(!isbn.matches("\\d+")){
+                //ISBN string ifade içeriyorsa uyar.
+                Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 13-digit numeric value.");
+                alert.showAndWait();
             }
-        }}
+            else {
+                try {
+                    String directoryPath = "books";
+                    String randomUUID = UUID.randomUUID().toString();//INITIALIZING RANDOM UUID FOR "ISBN TO UUID" MAP
+                    String fileName = directoryPath + "/" + randomUUID + ".json";
+
+                    java.nio.file.Path path = Paths.get(directoryPath);
+                    if (!Files.exists(path)) {
+                        Files.createDirectories(path);
+                    }
+
+
+                    //REACHING THE TEXTFIELDS THAT USER FILL BY USING MAP
+
+                    String title = fieldMap.get("Title").getText();
+                    String subtitle = fieldMap.get("Subtitle").getText();
+                    List<String> authors = Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"));
+                    List<String> translators = Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*"));
+                    String publisher = fieldMap.get("Publisher").getText();
+                    String date = fieldMap.get("Date").getText();
+                    String edition = fieldMap.get("Edition").getText();
+                    String cover = fieldMap.get("Cover").getText();
+                    String language = fieldMap.get("Language").getText();
+                    double rating = safeParseDouble(fieldMap.get("Rating").getText());
+                    List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
+
+
+                    //CREATING THE JSON FILE VIA INFO WE GET FROM TEXT FIELDS
+
+                    Book newBook = new Book(title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
+
+                    JSONObject bookJson = new JSONObject();
+                    bookJson.put("title", title);
+                    bookJson.put("subtitle", subtitle);
+                    bookJson.put("authors", new JSONArray(authors));
+                    bookJson.put("translators", new JSONArray(translators));
+                    bookJson.put("isbn", isbn);
+                    bookJson.put("publisher", publisher);
+                    bookJson.put("date", date);
+                    bookJson.put("edition", edition);
+                    bookJson.put("cover", cover);
+                    bookJson.put("language", language);
+                    bookJson.put("rating", rating);
+                    bookJson.put("tags", new JSONArray(tags));
+
+
+                    //PUT THE NEW BOOK'S ISBN AS KEY AND ITS JSON UUID NUMBER AS VALUE IN "ISBN TO VALUE"
+                    isbnToUuidMap.put(isbn, randomUUID);
+                    //FILE OUTPUT
+
+                    Files.write(Paths.get(fileName), bookJson.toString().getBytes(), StandardOpenOption.CREATE_NEW);
+                    System.out.println("Successfully saved to " + fileName);
+
+
+                    //UPDATING THE BOOK TABLE -TABLEVIEW-
+
+                    Platform.runLater(() -> GUI.booksData.add(newBook));
+
+                    stage.setScene(mainScene);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }}
         );
 
 
@@ -176,6 +192,9 @@ public class Transactions {
         backButton.setOnAction(e -> {
             stage.setScene(mainScene);
         });
+
+
+
 
 
         //ADD SECTION LAYOUT SETTINGS
@@ -386,6 +405,7 @@ public class Transactions {
             stage.setScene(mainScene);
         });
     }
+
 
 
 

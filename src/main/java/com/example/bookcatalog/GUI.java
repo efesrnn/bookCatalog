@@ -5,6 +5,7 @@ import javafx.application.Platform; //Layoutlar arası geçişin kusursuz olmas�
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -13,21 +14,77 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
-
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import org.json.JSONObject;
 
 
 public class GUI extends Application {
+
+
+
     public static ObservableList<Book> booksData = FXCollections.observableArrayList();
+    public static FilteredList<Book> filteredBooks;
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void showFilterWindow(Stage mainStage) {
+        try {
+            // Load the FXML document for filtering
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Filtering.fxml"));
+            Parent root = loader.load();
+
+            // Create a new stage for the filter window
+            Stage filterStage = new Stage();
+            filterStage.setTitle("Filter Tags");
+            filterStage.initModality(Modality.WINDOW_MODAL); // Makes the filter window modal relative to the main window
+            filterStage.initOwner(mainStage); // Sets mainStage as the owner of the new stage
+
+            FilteringController controller = loader.getController();
+            controller.setStage(filterStage); // Sets the stage in your FilteringController
+
+            filterStage.setScene(new Scene(root));
+            filterStage.showAndWait(); // Use showAndWait to make the window modal and blocking
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void loadExistingBooks(String directoryPath) {
+        try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".json"))
+                    .forEach(path -> {
+                        try {
+                            String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+                            JSONObject json = new JSONObject(content);
+                            Book book = Book.fromJSON(json); // Correctly using the static method
+                            booksData.add(book);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     //COLUMN CREATION METHOD FOR STRING TYPE
     private <S, T> TableColumn<S, T> createColumn(String title, java.util.function.Function<S, T> propertyValueFactory) {
@@ -57,7 +114,19 @@ public class GUI extends Application {
 
     @Override
     public void start(Stage stage) {
+        loadExistingBooks("books");
+        System.out.println(" ");
+        System.out.println(" ");
+        System.out.println("--------------------------------------------------------------------");
+        System.out.println("             WELCOME TO BOOK CATALOG'S COMMAND LINE!");
+        System.out.println("                    Logs will be shown here.");
+        System.out.println("--------------------------------------------------------------------");
+        System.out.println(" ");
+        System.out.println(" ");
+        System.out.println("                           TEAM-5");
+        System.out.println(" ");
 
+        filteredBooks = new FilteredList<>(booksData, p -> true);
         Label titleLabel = new Label("Book Catalog [v1.3] - Manage your book collection efficiently");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
@@ -65,28 +134,27 @@ public class GUI extends Application {
 
         //HELP & ABOUT BUTTONS
         Button helpButton = new Button("Help");
-        helpButton.setOnAction(e -> {/*Henüz işlev yok*/ });
         Button aboutButton = new Button("About");
-        aboutButton.setOnAction(e -> { /*Henüz işlev yok*/});
         HBox helpAboutBox = new HBox(10, helpButton, aboutButton);
         helpAboutBox.setAlignment(Pos.CENTER_RIGHT);
         helpAboutBox.setPadding(new Insets(0, 20, 10, 0));
 
-        //SEARCH BUTTON & TEXTFIELD
+        //SEARCH BUTTON, FILTER BUTTON & SEARCHING TEXT FIELD
         Label searchLabel = new Label("Search a book:");
         TextField searchField = new TextField();
         searchField.setPromptText("Enter book title, author, or ISBN"); //Tıklayınca kaybolan yazı.
         Button searchButton = new Button("Search");
+        Button filtersButton = new Button("Filters");
+        HBox searchAndFiltersBox = new HBox(10, searchLabel, searchField, searchButton, filtersButton);
+        searchAndFiltersBox.setAlignment(Pos.CENTER);
+        searchAndFiltersBox.setPadding(new Insets(15, 20, 15, 20));
         searchField.setMaxWidth(400);
-        searchButton.setOnAction(e->{ /*Henüz işlev yok*/});
 
-        VBox topLayout = new VBox(10, searchLabel, searchField, searchButton);
-        topLayout.setAlignment(Pos.CENTER);
-        topLayout.setPadding(new Insets(15, 20, 15, 20));
+
 
         // Combine title, help/about bar, and search controls in the top layout
-        VBox combinedTopLayout = new VBox(5, titleLabel, helpAboutBox, topLayout);
-        combinedTopLayout.setAlignment(Pos.CENTER);
+        VBox topLayout = new VBox(5, titleLabel, helpAboutBox, searchAndFiltersBox);
+        topLayout.setAlignment(Pos.CENTER);
 
 
         //ADD & EDIT BUTTONS
@@ -153,7 +221,7 @@ public class GUI extends Application {
 
         TableView<Book> bookTable = new TableView<>();
         bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
-        bookTable.setItems(booksData);
+        bookTable.setItems(GUI.filteredBooks);
         bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
 
@@ -202,11 +270,32 @@ public class GUI extends Application {
         // Use this VBox as the center of the main layout
 
         BorderPane mainLayout = new BorderPane();
-        mainLayout.setTop(combinedTopLayout);
+        mainLayout.setTop(topLayout);
         mainLayout.setCenter(tableContainer);
         mainLayout.setBottom(bottomLayout);
 
         Scene mainScene = new Scene(mainLayout, 800, 600);
+
+
+
+        //HELP BUTTON ACTION
+        helpButton.setOnAction(e -> {/*Henüz işlev yok*/ });
+
+
+
+        //ABOUT BUTTON ACTION
+        aboutButton.setOnAction(e -> { /*Henüz işlev yok*/});
+
+
+
+        //SEARCH BUTTON ACTION
+        searchButton.setOnAction(e->{ /*Henüz işlev yok*/});
+
+
+
+        //FILTERS BUTTON ACTION
+        filtersButton.setOnAction(e->{showFilterWindow(stage);});
+
 
 
         //ADD BUTTON ACTION

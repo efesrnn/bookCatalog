@@ -20,14 +20,16 @@ ext {
 sourceCompatibility = '19'
 targetCompatibility = '19'
 
+
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
 application {
   mainModule = 'com.example.bookcatalog'
-  mainClass = 'com.example.bookcatalog.HelloApplication'
+  mainClass = 'com.example.bookcatalog.GUI'
 }
+
 
 javafx {
   version = '19.0.2'
@@ -35,6 +37,7 @@ javafx {
 }
 
 dependencies {
+  implementation 'org.openjfx:javafx-controls:21'
   implementation 'org.json:json:20220320'
   testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")

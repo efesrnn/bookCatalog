@@ -1,6 +1,10 @@
 package com.example.bookcatalog;
 
+import org.json.JSONObject;
+
 import java.util.List;
+import java.util.stream.Collectors;
+
 public class Book {
     private String title;
     private String subtitle;
@@ -31,6 +35,29 @@ public class Book {
         this.language = language;
         this.rating = rating;
         this.tags = tags;
+    }
+
+    public static Book fromJSON(JSONObject json) {
+        String title = json.getString("title");
+        String subtitle = json.optString("subtitle", "");
+        List<String> authors = json.getJSONArray("authors").toList().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+        List<String> translators = json.getJSONArray("translators").toList().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+        String isbn = json.getString("isbn");
+        String publisher = json.getString("publisher");
+        String date = json.getString("date");
+        String edition = json.optString("edition", "");
+        String cover = json.getString("cover");
+        String language = json.getString("language");
+        double rating = json.optDouble("rating", 0.0);
+        List<String> tags = json.getJSONArray("tags").toList().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
+        return new Book(title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
     }
 
     //GETTER & SETTER
