@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<VBox fx:id="root" alignment="TOP_CENTER" spacing="20" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.bookcatalog.FilteringController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+    <ScrollPane fitToWidth="true" prefHeight="400" VBox.vgrow="ALWAYS">
+        <VBox spacing="10">
+            <VBox fx:id="tagsContainer" spacing="10">
+                <!-- Checkboxes will be added here -->
+            </VBox>
+        </VBox>
+    </ScrollPane>
+    <HBox spacing="5" alignment="CENTER">
+        <Button fx:id="applyButton" text="Apply Filters" onMouseEntered="#onMouseEnteredApply" onMouseExited="#onMouseExitedApply" onAction="#applyFilters" minWidth="100" style="-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-size: 12pt;"/>
+        <Button fx:id="clearButton" text="Clear Filters" onMouseEntered="#onMouseEnteredClear" onMouseExited="#onMouseExitedClear" onAction="#clearFilters" minWidth="100" style="-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-size: 12pt;"/>
+    </HBox>
+</VBox>
+
