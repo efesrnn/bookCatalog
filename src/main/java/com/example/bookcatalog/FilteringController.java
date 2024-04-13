@@ -18,10 +18,13 @@ public class FilteringController {
     @FXML
     private VBox tagsContainer;
     private Map<String, CheckBox> tagCheckboxes = new HashMap<>();
-    private Stage stage; // Eğer controller'a stage geçirmeniz gerekirse diye eklendi
+    private Stage stage;
+
+
+    private static Set<String> savedSelectedTags = new HashSet<>();
 
     public void setStage(Stage stage) {
-        this.stage = stage; // Stage'i set etmek için bir method
+        this.stage = stage;
     }
 
     @FXML
@@ -46,6 +49,7 @@ public class FilteringController {
 
     public void initialize() {
         loadUniqueTags();
+        restoreCheckedStates();
     }
 
     private void loadUniqueTags() {
@@ -54,31 +58,38 @@ public class FilteringController {
             uniqueTags.addAll(book.getTags());
         }
 
-        tagsContainer.getChildren().clear(); // Clear existing tags if any before loading
+        tagsContainer.getChildren().clear();
         for (String tag : uniqueTags) {
             CheckBox checkBox = new CheckBox(tag);
-            // Removed action event that automatically applies filters
             tagsContainer.getChildren().add(checkBox);
             tagCheckboxes.put(tag, checkBox);
         }
     }
+    // Restores the check states of the checkboxes based on previously saved selected tags
+    private void restoreCheckedStates() {
+        tagCheckboxes.forEach((tag, checkBox) -> {
+            checkBox.setSelected(savedSelectedTags.contains(tag));
+        });
+    }
 
     @FXML
     protected void applyFilters() {
-        Set<String> selectedTags = tagCheckboxes.values().stream()
-                .filter(CheckBox::isSelected)
-                .map(CheckBox::getText)
-                .collect(Collectors.toSet());
+        Set<String> selectedTags = tagCheckboxes.values().stream().filter(CheckBox::isSelected).map(CheckBox::getText).collect(Collectors.toSet());
+
+        savedSelectedTags = new HashSet<>(selectedTags);
 
         GUI.filteredBooks.setPredicate(book -> selectedTags.isEmpty() || book.getTags().stream().anyMatch(selectedTags::contains));
-        // Optionally, close the stage here if you still want to close it manually by button
+// Optionally, close the stage here if you still want to close it manually by button
+        if (stage != null) {
+            stage.close();
+        }
     }
 
-    // Modify clearFilters to not close the window or apply filters automatically
     @FXML
     protected void clearFilters() {
         tagCheckboxes.values().forEach(cb -> cb.setSelected(false));
         GUI.filteredBooks.setPredicate(p -> true);
         // Do not call applyFilters() here to avoid closing the window
+        savedSelectedTags.clear();
     }
 }
