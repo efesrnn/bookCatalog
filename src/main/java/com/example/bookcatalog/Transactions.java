@@ -19,6 +19,7 @@ import javafx.scene.control.Label;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -384,27 +385,40 @@ public class Transactions {
     }
     public static void deleteBooks(Stage stage, Scene mainScene, List<Book> selectedBooks) {
         selectedBooks.forEach(book -> {
-            String uuid = isbnToUuidMap.get(book.getIsbn()); // Kitabın ISBN numarasına göre UUID'yi alıyo
+            String uuid = isbnToUuidMap.get(book.getIsbn());
             if (uuid != null) {
+                String directoryPath = "books";
+                String filePath = directoryPath + "/" + uuid + ".json";
+                Path pathToDelete = Paths.get(filePath);
+
+                System.out.println("Attempting to delete: " + pathToDelete.toAbsolutePath());
+
                 try {
-                    String directoryPath = "books";
-                    String filePath = directoryPath + "/" + uuid + ".json";
-                    Files.deleteIfExists(Paths.get(filePath)); // UUID'ye ait dosyayı siliyo
-                    System.out.println("Successfully deleted: " + filePath);
+                    if (Files.exists(pathToDelete)) {
+                        Files.deleteIfExists(pathToDelete);
+                        System.out.println("Successfully deleted: " + filePath);
+                    } else {
+                        System.out.println("File does not exist: " + filePath);
+                    }
                 } catch (IOException e) {
+                    System.out.println("Failed to delete: " + filePath);
                     e.printStackTrace();
                     Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred while trying to delete the book.");
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred while trying to delete the book: " + e.getMessage());
                         alert.showAndWait();
                     });
                 }
+            } else {
+                System.out.println("No UUID found for book with ISBN: " + book.getIsbn());
             }
         });
         Platform.runLater(() -> {
-            GUI.booksData.removeAll(selectedBooks);// GUI'den kitapları kaldırma burda table view refresh actionda
-            stage.setScene(mainScene);
+            GUI.booksData.removeAll(selectedBooks);
+            stage.setScene(mainScene); // Refresh main scene to update the view
         });
     }
+
+
 
 
 

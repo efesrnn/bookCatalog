@@ -47,21 +47,20 @@ public class GUI extends Application {
 
     private void showFilterWindow(Stage mainStage) {
         try {
-            // Load the FXML document for filtering
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Filtering.fxml"));
             Parent root = loader.load();
 
-            // Create a new stage for the filter window
             Stage filterStage = new Stage();
             filterStage.setTitle("Filter Tags");
-            filterStage.initModality(Modality.WINDOW_MODAL); // Makes the filter window modal relative to the main window
-            filterStage.initOwner(mainStage); // Sets mainStage as the owner of the new stage
+            filterStage.initModality(Modality.WINDOW_MODAL);
+            filterStage.initOwner(mainStage);
 
             FilteringController controller = loader.getController();
-            controller.setStage(filterStage); // Sets the stage in your FilteringController
+            controller.setStage(filterStage);
 
             filterStage.setScene(new Scene(root));
-            filterStage.showAndWait(); // Use showAndWait to make the window modal and blocking
+            filterStage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -76,7 +75,7 @@ public class GUI extends Application {
                         try {
                             String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
                             JSONObject json = new JSONObject(content);
-                            Book book = Book.fromJSON(json); // Correctly using the static method
+                            Book book = Book.fromJSON(json);
                             booksData.add(book);
                         } catch (IOException e) {
                             e.printStackTrace();
