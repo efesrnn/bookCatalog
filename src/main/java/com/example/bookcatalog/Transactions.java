@@ -7,7 +7,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,20 +16,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class Transactions {
 
-    public static Map<String, String> isbnToUuidMap = new HashMap<>();//IN ADD METHOD , WE CREATE AN RANDOM UUID NUMBER
-                                                                      //TO CREATE A UNIQUE JSON FILE NAME
-                                                                      //FOR EDITING,WE MUST LOCATE THIS UUID NUMBER
-                                                                      //SO WE CREATE A MAP WHICH ITS KEY IS THE ADDED BOOKS ISBN NUMBER AND VALUE IS UUID NUMBER
 
     private static double safeParseDouble(String str) {
         try {
@@ -117,8 +109,7 @@ public class Transactions {
             else {
                 try {
                     String directoryPath = "books";
-                    String randomUUID = UUID.randomUUID().toString();//INITIALIZING RANDOM UUID FOR "ISBN TO UUID" MAP
-                    String fileName = directoryPath + "/" + randomUUID + ".json";
+                    String fileName = directoryPath + "/" + isbn + ".json";
 
                     java.nio.file.Path path = Paths.get(directoryPath);
                     if (!Files.exists(path)) {
@@ -160,8 +151,7 @@ public class Transactions {
                     bookJson.put("tags", new JSONArray(tags));
 
 
-                    //PUT THE NEW BOOK'S ISBN AS KEY AND ITS JSON UUID NUMBER AS VALUE IN "ISBN TO VALUE"
-                    isbnToUuidMap.put(isbn, randomUUID);
+
                     //FILE OUTPUT
 
                     Files.write(Paths.get(fileName), bookJson.toString().getBytes(), StandardOpenOption.CREATE_NEW);
@@ -306,53 +296,74 @@ public class Transactions {
 
 
         saveButton.setOnAction(e->{
+            // Kullanıcıdan alınan veriler
+            Map<String, Object> userInput = new HashMap<>();
+            userInput.put("title", fieldMap.get("Title").getText());
+            userInput.put("subtitle", fieldMap.get("Subtitle").getText());
+            userInput.put("authors", new JSONArray(Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"))));
+            userInput.put("translators", new JSONArray(Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*"))));
+            userInput.put("isbn", fieldMap.get("ISBN").getText());
+            userInput.put("publisher", fieldMap.get("Publisher").getText());
+            userInput.put("date", fieldMap.get("Date").getText());
+            userInput.put("edition", fieldMap.get("Edition").getText());
+            userInput.put("cover", fieldMap.get("Cover").getText());
+            userInput.put("language", fieldMap.get("Language").getText());
+            userInput.put("rating", safeParseDouble(fieldMap.get("Rating").getText()));
+            userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
 
-            //REACHING THE TEXT FIELDS THAT USER FILL BY USING MAP(SAME AS ADD METHOD)
-
-            selectedBook.setTitle(fieldMap.get("Title").getText());
-            selectedBook.setSubtitle(fieldMap.get("Subtitle").getText());
-            selectedBook.setAuthors(Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*")));
-            selectedBook.setTranslators(Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*")));
-            selectedBook.setIsbn(fieldMap.get("ISBN").getText());
-            selectedBook.setPublisher(fieldMap.get("Publisher").getText());
-            selectedBook.setDate(fieldMap.get("Date").getText());
-            selectedBook.setEdition(fieldMap.get("Edition").getText());
-            selectedBook.setCover(fieldMap.get("Cover").getText());
-            selectedBook.setLanguage(fieldMap.get("Language").getText());
-            selectedBook.setRating(safeParseDouble(fieldMap.get("Rating").getText()));
-            selectedBook.setTags(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*")));
-
+            String directoryPath = "books";
+            String filePath = directoryPath + "/" + selectedBook.getIsbn() + ".json";
 
             try {
-               //CREATING A JSON OBJECT TO HOLD NEW INPUTS
-                JSONObject bookJson = new JSONObject();
-                bookJson.put("title",selectedBook.getTitle());
-                bookJson.put("subtitle",selectedBook.getSubtitle());
-                bookJson.put("authors",new JSONArray(selectedBook.getAuthors()));
-                bookJson.put("translators",new JSONArray(selectedBook.getTranslators()));
-                bookJson.put("isbn", selectedBook.getIsbn());
-                bookJson.put("publisher", selectedBook.getPublisher());
-                bookJson.put("date", selectedBook.getDate());
-                bookJson.put("edition", selectedBook.getEdition());
-                bookJson.put("cover", selectedBook.getCover());
-                bookJson.put("language", selectedBook.getLanguage());
-                bookJson.put("rating",selectedBook.getRating());
-                bookJson.put("tags", new JSONArray(selectedBook.getTags()));
+                // Mevcut JSON dosyasını okuyun
+                Path path = Paths.get(filePath);
+                String content = Files.readString(path);
+                JSONObject existingJson = new JSONObject(content);
 
+                String oldIsbn = existingJson.optString("isbn");
+                String newIsbn = userInput.get("isbn").toString();
 
-                //BY BOOK'S ISBN NUMBER, THE SOFTWARE FINDS THE JSON FILE NAME(BY "ISBN TO UUID" MAP)
-                String directoryPath = "books";
-                String filePath = directoryPath+ "/"+ isbnToUuidMap.get(selectedBook.getIsbn()) + ".json";
-                Files.write(Paths.get(filePath), bookJson.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                // Kullanıcı girişi ile mevcut JSON verilerini karşılaştırın ve farkları güncelleyin
+                boolean isUpdated = false;
+                for (String key : userInput.keySet()) {
+                    Object userValue = userInput.get(key);
+                    Object jsonValue = existingJson.opt(key);
 
+                    if (userValue instanceof JSONArray) {
+                        JSONArray userArray = (JSONArray) userValue;
+                        JSONArray jsonArray = existingJson.optJSONArray(key);
+
+                        if (jsonArraysEqual(userArray, jsonArray)) {
+                            existingJson.put(key, userValue);
+                            isUpdated = true;
+                        }
+                    } else if (!Objects.equals(userValue, jsonValue)) {
+                        existingJson.put(key, userValue);
+                        isUpdated = true;
+                    }
+                }
+
+                // Eğer güncelleme yapıldıysa, dosyayı güncelleyin
+                if (isUpdated) {
+                    // Eğer ISBN güncellendiyse, dosyanın ismini değiştir
+                    if (!oldIsbn.equals(newIsbn)) {
+                        Path newPath = Paths.get("books", newIsbn + ".json");
+                        Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
+                        path = newPath; // Güncellenmiş path ile devam et
+                    }
+                    Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                    System.out.println("Successfully updated: " + filePath);
+                }
 
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                ex.printStackTrace();
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
+                alert.showAndWait();
             }
 
             stage.setScene(mainScene);
-
         });
+
 
         //BACK BUTTON FOR EDIT
 
@@ -383,19 +394,31 @@ public class Transactions {
 
 
     }
+
+    public static boolean jsonArraysEqual(JSONArray arr1, JSONArray arr2) {
+        if (arr1 == null || arr2 == null) return true; // Null control
+        if (arr1.length() != arr2.length()) return true;
+
+        for (int i = 0; i < arr1.length(); i++) {
+            if (!Objects.equals(arr1.opt(i), arr2.opt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void deleteBooks(Stage stage, Scene mainScene, List<Book> selectedBooks) {
         selectedBooks.forEach(book -> {
-            String uuid = isbnToUuidMap.get(book.getIsbn());
-            if (uuid != null) {
+            if (book.getIsbn() != null) {
                 String directoryPath = "books";
-                String filePath = directoryPath + "/" + uuid + ".json";
+                String filePath = directoryPath + "/" + book.getIsbn() + ".json";
                 Path pathToDelete = Paths.get(filePath);
 
                 System.out.println("Attempting to delete: " + pathToDelete.toAbsolutePath());
 
                 try {
                     if (Files.exists(pathToDelete)) {
-                        Files.deleteIfExists(pathToDelete);
+                        Files.delete(pathToDelete);  // Eğer dosya varsa sil
                         System.out.println("Successfully deleted: " + filePath);
                     } else {
                         System.out.println("File does not exist: " + filePath);
@@ -409,14 +432,15 @@ public class Transactions {
                     });
                 }
             } else {
-                System.out.println("No UUID found for book with ISBN: " + book.getIsbn());
+                System.out.println("No ISBN found for book with ISBN: " + book.getIsbn());
             }
         });
         Platform.runLater(() -> {
-            GUI.booksData.removeAll(selectedBooks);
-            stage.setScene(mainScene); // Refresh main scene to update the view
+            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldır
+            stage.setScene(mainScene); // Ana sahneyi yeniden yükle
         });
     }
+
 
 
 

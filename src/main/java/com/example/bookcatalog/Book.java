@@ -2,7 +2,9 @@ package com.example.bookcatalog;
 
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Book {
@@ -18,7 +20,6 @@ public class Book {
     private String language;
     private double rating; //4.5 falan olabilir double kalsın.
     private List<String> tags; //Hoca birkaç tag girmiş olabilir taklaya gelmeyelim.
-
     //CONSTRUCTOR
     public Book(String title, String subtitle, List<String> authors, List<String> translators, String isbn,
                 String publisher, String date, String edition, String cover, String language, double rating,
