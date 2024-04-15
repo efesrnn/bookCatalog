@@ -100,19 +100,19 @@ public class GUI extends Application {
 
                             boolean needsUpdate = false;
 
-                            // Handle the 'rating' field safely
+                            // Rating double olduğu için string-double çevrimleri:
                             if (json.has("rating")) {
                                 double rating;
                                 try {
-                                    // Try to get the rating directly as a double
+                                    // Double type verisi varsa hiç ellemeden direkt alıyoruz.
                                     rating = json.getDouble("rating");
                                 } catch (JSONException ex) {
-                                    // If it's not a double, attempt to parse it from a string
+                                    //String type algılanırsa parseDouble ile double'a çeviriyoruz.
                                     try {
                                         String ratingStr = json.getString("rating");
                                         rating = Double.parseDouble(ratingStr);
                                     } catch (NumberFormatException | JSONException e) {
-                                        // If parsing fails, default to 0.0
+                                        //Eğer çevrim başarısız olursa demekki karakter girilmiştir. Default value olan 0.0'ı atıyoruz.
                                         rating = 0.0;
                                         System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0.");
                                         needsUpdate = true;
@@ -127,7 +127,7 @@ public class GUI extends Application {
                                 alert.showAndWait();
                             }
 
-                            // Update the file if needed
+                            //Eğer string type varsa her açışta sistem içerisinde değiştirmek yerine dosyayı da güncelliyoruz.
                             if (needsUpdate) {
                                 Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
                                 System.out.println("Updated JSON file at: " + path);
@@ -174,10 +174,11 @@ public class GUI extends Application {
 
 
 
+    //Tableview kitap bilgisine çift tıklayınca detaylı bilgi penceresini açmak için:
     private void showBookDetails(Book book) {
         try {
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("BookData.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/bookcatalog/BookData.fxml"));
             Parent root = loader.load();
             TableviewBookDataController controller = loader.getController();
             Stage stage = new Stage();
@@ -188,6 +189,7 @@ public class GUI extends Application {
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("An error occurred while trying to open book information window");
         }
     }
 
@@ -206,7 +208,7 @@ public class GUI extends Application {
         loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.4]");
+        Label titleLabel = new Label("Book Catalog [v1.5]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -231,7 +233,7 @@ public class GUI extends Application {
 
 
 
-        // Combine title, help/about bar, and search controls in the top layout
+        //title, help/about bar, ve search controls için toplayout vboxunda birleştirme işlemi.
         VBox topLayout = new VBox(5, titleLabel, helpAboutBox, searchAndFiltersBox);
         topLayout.setAlignment(Pos.CENTER);
 
@@ -247,7 +249,7 @@ public class GUI extends Application {
 
 
 
-        // DELETE BUTTON
+        // DELETE BUTTON AND CSS DECLARATIONS
         String deleteButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #dc3545; -fx-text-fill: white;";
         String deleteButtonHoverStyle = "-fx-background-color: #d9534f;"; // Mouse üzerine gelince
         String deleteButtonArmedStyle = "-fx-background-color: #c82333;"; // Basıldığında
@@ -273,9 +275,19 @@ public class GUI extends Application {
 
         //IMPORT & EXPORT JSON BUTTONS
         Button importButton = new Button("Import JSON");
-        importButton.setOnAction(e->{ /*Henüz işlev yok*/ });
+        importButton.setOnAction(e->{
+            /*Henüz işlev yok*/
+            System.out.println("Import JSON button is not included for Milestone-2");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Import JSON button is not included for Milestone-2");
+            alert.showAndWait();
+        });
         Button exportButton = new Button("Export JSON");
-        exportButton.setOnAction(e-> { /*Henüz işlev yok*/ });
+        exportButton.setOnAction(e-> {
+            /*Henüz işlev yok*/
+            System.out.println("Export JSON button is not included for Milestone-2");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Export JSON button is not included for Milestone-2");
+            alert.showAndWait();
+        });
 
 
 
@@ -308,7 +320,8 @@ public class GUI extends Application {
         });
 
 
-        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
+        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+        //bu listviewda hiç kitap yoksa bu yazıyı gösteriyor.
         bookTable.setItems(GUI.filteredBooks);
         bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -355,7 +368,7 @@ public class GUI extends Application {
         tableContainer.setPadding(new Insets(15)); // 10 pixels padding on all sides
         VBox.setVgrow(bookTable, Priority.ALWAYS);
 
-        // Use this VBox as the center of the main layout
+
 
         BorderPane mainLayout = new BorderPane();
         mainLayout.setTop(topLayout);
@@ -363,35 +376,56 @@ public class GUI extends Application {
         mainLayout.setBottom(bottomLayout);
 
         Scene mainScene = new Scene(mainLayout, 800, 600);
+        stage.setTitle("Book Catalog");
+        stage.setScene(mainScene);
+        stage.show();
 
 
 
         //HELP BUTTON ACTION
-        helpButton.setOnAction(e -> {/*Henüz işlev yok*/ });
+        helpButton.setOnAction(e -> {
+            /*Henüz işlev yok*/
+            System.out.println("Help button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Help button is not included for Milestone-2.");
+            alert.showAndWait();
+        });
 
 
 
         //ABOUT BUTTON ACTION
-        aboutButton.setOnAction(e -> { /*Henüz işlev yok*/});
+        aboutButton.setOnAction(e -> {
+            /*Henüz işlev yok*/
+            System.out.println("About button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
+            alert.showAndWait();
+        });
 
 
 
         //SEARCH BUTTON ACTION
-        searchButton.setOnAction(e->{ /*Henüz işlev yok*/});
+        searchButton.setOnAction(e->{/*Henüz işlev yok*/
+            System.out.println("Search button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Search button is not included for Milestone-2.");
+            alert.showAndWait();});
 
 
 
         //FILTERS BUTTON ACTION
-        filtersButton.setOnAction(e->{showFilterWindow(stage);});
+        filtersButton.setOnAction(e->{
+            System.out.println("Filters succesfully loaded.");
+            showFilterWindow(stage);
+        });
 
 
 
         //ADD BUTTON ACTION
 
         addButton.setOnAction(e -> {
+
             //  2. bir layout oluşturmak yerine var olanı layout arasında geçiş yapabilmek için Add butonu
             //  layoutu oluşturduktan sonra kullanılabilir hale geldi add butonun burda olmasının sebebi bu muhtemelen
             //  edit butonu da daha sonra buraya gelecek
+
             boolean isFullScreen = stage.isFullScreen();
             double width = stage.getWidth();
             double height = stage.getHeight();
@@ -411,27 +445,26 @@ public class GUI extends Application {
         addButton.setStyle("-fx-font-weight: bold; ");
 
 
-        stage.setTitle("Book Catalog");
-        stage.setScene(mainScene);
-        stage.show();
-
 
         // EDIT BUTTON ACTION
         editButton.setOnAction(e -> {
-            // Get all selected books
+
+
             List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
 
-            // Check if exactly one book is selected
+            //1 kitap seçiliyse if statementı:
             if (selectedBooks.size() == 1) {
                 Book selectedBook = selectedBooks.get(0); // Get the single selected book
                 bookTable.refresh(); // Refresh the TableView after editing
                 Transactions.showEditBookSection(stage, mainScene, selectedBook);
             } else if (selectedBooks.isEmpty()) {
-                // No book selected
+                //kitap seçili olmama durumu:
+                System.out.println("No selection for edit is not valid");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a book from the table to edit.");
                 alert.showAndWait();
             } else {
-                // More than one book selected
+                //Multiple kitap seçilimi yapılırsa:
+                System.out.println("Multiple selection for edit is not valid");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Editing is only applicable to one selected book at a time.");
                 alert.showAndWait();
             }
@@ -445,28 +478,35 @@ public class GUI extends Application {
         deleteButton.setOnAction(e -> {
             List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
             if (!selectedBooks.isEmpty()) {
-                // Build a string with all selected book titles
+                //Stream, koleksiyondaki öğeler üzerinde ardışık işlemler yapmamızı sağlayan bir araçtır.
+                //bu sayede kitap verilerimizi daha hızlı ve kolay işliyoruz.
                 String bookListString = selectedBooks.stream()
                         .map(Book::getTitle)
                         .collect(Collectors.joining(", "));
 
-                // Create and show confirmation alert with book titles
+                //Yanlışlıkla delete tuşuna basmayı engellemek için:
                 Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
                 confirmationAlert.setTitle("Confirm Deletion");
+                System.out.println("Confirm Deletion?");
                 confirmationAlert.setHeaderText("Are you sure you want to delete the selected books?");
                 confirmationAlert.setContentText("You are about to delete the following books: " + bookListString);
 
-                // Customize the button labels if desired
+                //Uyarı ekranı için confirm ve iptal butonları:
                 ButtonType delete2Button = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
                 ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
                 confirmationAlert.getButtonTypes().setAll(delete2Button, cancelButton);
 
+
+                //Olası butona basma/basmama durumları için sonuçlar:
                 Optional<ButtonType> response = confirmationAlert.showAndWait();
                 if (response.isPresent() && response.get() == delete2Button) {
                     Transactions.deleteBooks(stage, mainScene, selectedBooks);
-                    bookTable.refresh();  // görünümü refreshler
+                    bookTable.refresh();
+                } else if (response.isPresent() && response.get() == cancelButton) {
+                    System.out.println("Deletion cancelled by user.");
                 }
             } else {
+                System.out.println("No selection has been made!");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select at least one book to delete.");
                 alert.showAndWait();
             }

@@ -16,6 +16,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
@@ -24,17 +25,18 @@ import java.util.stream.Stream;
 public class Transactions {
     //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
     private static String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
-    private static String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Lighter green when hovered
+    private static String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; //yeşil renk kodu
 
     private static String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
-    private static String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Lighter orange when hovered
+    private static String backButtonHoverStyle = "-fx-background-color: #edb879;"; //turuncu renk kodu
 
 
     private static double safeParseDouble(String str) {
         try {
             return Double.parseDouble(str);
         } catch (NumberFormatException e) {
-            return 0.0; // Default value or consider prompting user
+            System.out.println("String type detected. Successfully converted to default double value.");
+            return 0.0; //String type gelirse default 0.0 olarak double a çeviriyor.
         }
     }
     private static void setPromptTexts(Map<String, TextField> fieldMap) {
@@ -50,6 +52,8 @@ public class Transactions {
                 textField.setPromptText(prompts.get(key));
             }
         });
+
+        System.out.println("Prompt texts successfully loaded.");
     }
 
     private static boolean checkIsbnExists(String directoryPath, String isbn) {
@@ -61,10 +65,22 @@ public class Transactions {
         }
     }
 
+    private static String readJsonFile(Path path) {
+        try {
+            byte[] bytes = Files.readAllBytes(path);
+            System.out.println("Json successfully read.");
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.err.println("Failed to read file: " + path);
+            e.printStackTrace();
+        }
+        return "{}"; //Herhangi bir okuma hatasında jsonı boşa çevirip programın çalışmayı durdurmasını engelliyor.
+    }
+
 
     public static void showAddBookSection(Stage stage, Scene mainScene) {
 
-
+        System.out.println("Layout has changed as Edit Section.");
 
         Label infoLabel = new Label("Please enter all the information about the book you want to add.");
         infoLabel.setWrapText(true); //layout değişikliğinde yazının satır atlaması ve resize işlemleri
@@ -107,6 +123,7 @@ public class Transactions {
 
 
 
+
         //SAVE BUTTON CREATION AND ANIMATION
 
         Button saveButton = new Button("Save");
@@ -121,13 +138,16 @@ public class Transactions {
             String isbn = fieldMap.get("ISBN").getText();
             String ratingStr = fieldMap.get("Rating").getText();
             String title = fieldMap.get("Title").getText();
+
             if (isbn.isEmpty()) {
                 // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
                 alert.showAndWait();
-            } else if (isbn.length() > 13) { Alert alert = new Alert(Alert.AlertType.WARNING,
-                    //ISBN 13 rakamdan fazlaysa uyar.
-                    "ISBN cannot be more than 13-digit value.");
+            } else if (isbn.length() > 13|| isbn.length() <= 10) {
+                System.out.println("isbn length: "+isbn.length());
+                Alert alert = new Alert(Alert.AlertType.WARNING,
+                    //ISBN 13 rakamdan fazlaysa veya 10 dan azsa uyar.
+                    "ISBN cannot be more than 13-digit or less than 10-digit value.");
                 alert.showAndWait();
             }else if(!isbn.matches("\\d+")){
                 //ISBN string ifade içeriyorsa uyar.
@@ -220,6 +240,7 @@ public class Transactions {
         //BACK BUTTON ACTION
 
         backButton.setOnAction(e -> {
+            System.out.println("Layout has been changed as Main Layout.");
             stage.setScene(mainScene);
         });
 
@@ -260,6 +281,7 @@ public class Transactions {
                 isUpdated = true;
             }
         }
+        System.out.println("Book details has been updated.");
     }
 
     private static void updateObservableList(Book selectedBook, JSONObject updatedJson) {
@@ -278,13 +300,14 @@ public class Transactions {
         selectedBook.setTags(Arrays.asList(updatedJson.getJSONArray("tags").toList().toArray(new String[0])));
 
         Platform.runLater(() -> {
-            System.out.println("Book (ISBN: " + selectedBook.getIsbn() + ") has changed.");
+            System.out.println(selectedBook.getTitle()+ " (ISBN: " + selectedBook.getIsbn() + ") has changed.");
         });
     }
 
 
 
     public static void showEditBookSection(Stage stage, Scene mainScene, Book selectedBook) {
+        System.out.println("Layout has changed as Edit Section.");
 
         //EDIT PAGE LAYOUT INSTALLATIONS
         Label infoLabel = new Label("Please edit the information about the book");
@@ -367,8 +390,7 @@ public class Transactions {
         saveButton.setOnMouseExited(e -> saveButton.setStyle(saveButtonBaseStyle));
 
 
-        saveButton.setOnAction(e->{
-            // Kullanıcıdan alınan veriler
+        saveButton.setOnAction(e -> {
             Map<String, Object> userInput = new HashMap<>();
             userInput.put("title", fieldMap.get("Title").getText());
             userInput.put("subtitle", fieldMap.get("Subtitle").getText());
@@ -380,95 +402,56 @@ public class Transactions {
             userInput.put("edition", fieldMap.get("Edition").getText());
             userInput.put("cover", fieldMap.get("Cover").getText());
             userInput.put("language", fieldMap.get("Language").getText());
-            if(userInput.get("rating")==null || userInput.get("rating")=="" || userInput.get("rating")==" "){
-                userInput.put("rating","0.0");
-            }else{userInput.put("rating", fieldMap.get("Rating").getText());
-            }
+            userInput.put("rating", fieldMap.get("Rating").getText());
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
 
             String directoryPath = "books";
             String filePath = directoryPath + "/" + selectedBook.getIsbn() + ".json";
+            String newIsbn = userInput.get("isbn").toString();
+            String title = userInput.get("title").toString();
+            String ratingStr = userInput.get("rating").toString();
+
+            //Dosyaya kaydetmeden önce gereksinimleri kontrol etme kısmı:
+            if (title.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Title field cannot be blank.");
+                alert.showAndWait();
+                return;
+            }
+            if (newIsbn.length() > 13 || newIsbn.length() <= 10 || !newIsbn.matches("\\d+")) {
+                System.out.println("isbn length: "+newIsbn.length());
+                Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 13-digit numeric value.");
+                alert.showAndWait();
+                return;
+            }
+            if (!ratingStr.matches("\\d*(\\.\\d+)?")) {
+                System.out.println("Rating was not a valid numeric value and has been reset to default value which is '0.0'.");
+                safeParseDouble(ratingStr);
+                userInput.put("rating", ratingStr); //Default value çevrimi sonrası inputu güncelleme
+            }
+
+
+            if (checkIsbnExists(directoryPath, newIsbn) && !selectedBook.getIsbn().equals(newIsbn)) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
+                alert.showAndWait();
+                return;
+            }
 
             try {
-                // Mevcut JSON dosyasını okuma kısmı:
                 Path path = Paths.get(filePath);
-                String content = Files.readString(path);
-                JSONObject existingJson = new JSONObject(content);
-
-                String oldIsbn = existingJson.optString("isbn");
-                String newIsbn = userInput.get("isbn").toString();
-
+                JSONObject existingJson = new JSONObject(readJsonFile(path));
+                System.out.println("Json and entered data successfully compared.");
                 updateBookDetails(existingJson, userInput);
 
-
-                //If there is a String existing in rating part of json change it with default double value
-                String RatingStr = userInput.get("rating").toString();
-
-
-                // Process user input and compare it with existing JSON data
-                boolean isUpdated = false;
-                for (String key : userInput.keySet()) {
-                    Object userValue = userInput.get(key);
-                    Object jsonValue = existingJson.opt(key);
-
-                    if (userValue instanceof JSONArray) {
-                        JSONArray userArray = (JSONArray) userValue;
-                        JSONArray jsonArray = existingJson.optJSONArray(key);
-
-                        if (!jsonArraysEqual(userArray, jsonArray)) {
-                            existingJson.put(key, userValue);
-                            isUpdated = true;
-                        }
-                    } else if (!Objects.equals(userValue, jsonValue)) {
-                        existingJson.put(key, userValue);
-                        isUpdated = true;
-                    }
+                if (!selectedBook.getIsbn().equals(newIsbn)) {
+                    Path newPath = Paths.get(directoryPath, newIsbn + ".json");
+                    Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
+                    path = newPath;
                 }
 
-
-
-                // Eğer güncelleme yapıldıysa, dosyayı güncelleme kısmı:
-                if (isUpdated) {
-                    if (!oldIsbn.equals(newIsbn) && checkIsbnExists("books", newIsbn)) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
-                        alert.showAndWait();
-                        return;
-                    }
-                    // Eğer ISBN güncellendiyse, dosyanın ismini değiştirme kısmı:
-                    if (!oldIsbn.equals(newIsbn)) {
-                        Path newPath = Paths.get("books", newIsbn + ".json");
-                        Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
-                        path = newPath; // Güncellenmiş path ile devam et
-                    }
-                    Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING);
-                    System.out.println("Successfully updated: " + filePath);
-                }
-                else if (oldIsbn.isEmpty() || newIsbn.isEmpty()) {
-                    // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
-                    alert.showAndWait();
-                } else if (oldIsbn.length() > 13 || newIsbn.length() > 13) { Alert alert = new Alert(Alert.AlertType.WARNING,
-                        //ISBN 13 rakamdan fazlaysa uyar.
-                        "ISBN cannot be more than 13-digit value.");
-                    alert.showAndWait();
-                }else if(!oldIsbn.matches("\\d+") || !newIsbn.matches("\\d+")){
-                    //ISBN string ifade içeriyorsa uyar.
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 13-digit numeric value.");
-                    alert.showAndWait();
-                }
-                else if(!RatingStr.matches("\\d*(\\.\\d+)?|^$")){
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Rating must be an integer, float, or empty.");
-                    alert.showAndWait();
-                }else if(userInput.get("title").toString().isEmpty()){
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Title field cannot be blank.");
-                    alert.showAndWait();
-                }
-
-
-                // Refresh the observable list and the table
+                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                System.out.println("Successfully updated: " + path);
                 updateObservableList(selectedBook, existingJson);
                 Platform.runLater(() -> GUI.bookTable.refresh());
-
             } catch (IOException ex) {
                 ex.printStackTrace();
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
@@ -476,6 +459,7 @@ public class Transactions {
             }
             stage.setScene(mainScene);
         });
+
 
 
         //BACK BUTTON CREATION AND ANIMATION
@@ -489,6 +473,7 @@ public class Transactions {
         //BACK BUTTON ACTION
 
         backButton.setOnAction(e -> {
+            System.out.println("Layout has been changed as Main Layout.");
             stage.setScene(mainScene);
         });
 
@@ -512,7 +497,7 @@ public class Transactions {
     }
 
     public static boolean jsonArraysEqual(JSONArray arr1, JSONArray arr2) {
-        if (arr1 == null || arr2 == null) return true; // Null control
+        if (arr1 == null || arr2 == null) return true; // Null kontrolü.
         if (arr1.length() != arr2.length()) return true;
 
         for (int i = 0; i < arr1.length(); i++) {
@@ -552,8 +537,9 @@ public class Transactions {
             }
         });
         Platform.runLater(() -> {
-            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldır
-            stage.setScene(mainScene); // Ana sahneyi yeniden yükle
+            System.out.println("Layout has been refreshed due to change of files.");
+            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldır.
+            stage.setScene(mainScene); // Main Layout'u yeniden yükle refresh için.
         });
     }
 

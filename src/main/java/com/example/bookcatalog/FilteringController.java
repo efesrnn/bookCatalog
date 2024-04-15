@@ -56,6 +56,7 @@ public class FilteringController {
     }
 
     private void loadUniqueTags() {
+        System.out.println("Tags being added to a map to prevent duplicate tags.");
         Set<String> uniqueTags = new HashSet<>();
         for (Book book : GUI.booksData) {
             uniqueTags.addAll(book.getTags());
@@ -63,7 +64,8 @@ public class FilteringController {
 
         tagsContainer.getChildren().clear();
         if (uniqueTags.isEmpty()) {
-            noTagsLabel.setVisible(true); // Eğer tag yoksa, uyarı mesajını göster
+            noTagsLabel.setVisible(true); // Eğer tag yoksa, uyarı labelını gösterme
+            //Burada bir sıkıntı var 1 tane labelsız checkbox gösteriyo düzelt.
         } else {
             noTagsLabel.setVisible(false); // Eğer tag varsa, uyarı mesajını gizle
             for (String tag : uniqueTags) {
@@ -72,8 +74,8 @@ public class FilteringController {
                 tagCheckboxes.put(tag, checkBox);
             }
         }
+        System.out.println("All tags have been shown.");
     }
-    // Restores the check states of the checkboxes based on previously saved selected tags
     private void restoreCheckedStates() {
         tagCheckboxes.forEach((tag, checkBox) -> {
             checkBox.setSelected(savedSelectedTags.contains(tag));
@@ -82,12 +84,13 @@ public class FilteringController {
 
     @FXML
     protected void applyFilters() {
+        System.out.println("Initıalizing String set to keep selected tags.");
         Set<String> selectedTags = tagCheckboxes.values().stream().filter(CheckBox::isSelected).map(CheckBox::getText).collect(Collectors.toSet());
 
         savedSelectedTags = new HashSet<>(selectedTags);
 
         GUI.filteredBooks.setPredicate(book -> selectedTags.isEmpty() || book.getTags().stream().anyMatch(selectedTags::contains));
-// Optionally, close the stage here if you still want to close it manually by button
+        System.out.println("Selected tags applied.");
         if (stage != null) {
             stage.close();
         }
@@ -97,7 +100,7 @@ public class FilteringController {
     protected void clearFilters() {
         tagCheckboxes.values().forEach(cb -> cb.setSelected(false));
         GUI.filteredBooks.setPredicate(p -> true);
-        // Do not call applyFilters() here to avoid closing the window
         savedSelectedTags.clear();
+        System.out.println("All selected tags removed.");
     }
 }

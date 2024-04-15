@@ -55,5 +55,6 @@ public class TableviewBookDataController {
         languageLabel.setText(book.getLanguage());
         ratingLabel.setText(String.format("%.2f", book.getRating()));
         tagsLabel.setText(String.join(", ", book.getTags()));
+        System.out.println("Detailed book information layout has opened.");
     }
 }
