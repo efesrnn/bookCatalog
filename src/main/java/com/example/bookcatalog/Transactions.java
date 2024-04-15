@@ -425,7 +425,7 @@ public class Transactions {
             }
             if (!ratingStr.matches("\\d*(\\.\\d+)?")) {
                 System.out.println("Rating was not a valid numeric value and has been reset to default value which is '0.0'.");
-                safeParseDouble(ratingStr);
+                ratingStr="0.0";
                 userInput.put("rating", ratingStr); //Default value çevrimi sonrası inputu güncelleme
             }
 
