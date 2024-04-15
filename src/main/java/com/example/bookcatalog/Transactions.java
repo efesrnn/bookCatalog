@@ -18,10 +18,16 @@ import javafx.scene.control.Label;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 
 public class Transactions {
+    //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
+    private static String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
+    private static String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Lighter green when hovered
+
+    private static String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
+    private static String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Lighter orange when hovered
 
 
     private static double safeParseDouble(String str) {
@@ -31,6 +37,30 @@ public class Transactions {
             return 0.0; // Default value or consider prompting user
         }
     }
+    private static void setPromptTexts(Map<String, TextField> fieldMap) {
+        Map<String, String> prompts = new HashMap<>();
+        prompts.put("Authors", "Multiple authors must be entered using a comma (,) as a delimiter.");
+        prompts.put("Translators", "Multiple translators must be entered using a comma (,) as a delimiter.");
+        prompts.put("Tags", "Multiple tags must be entered using a comma (,) as a delimiter.");
+        prompts.put("ISBN", "ISBN must be a unique 13-digit number.");
+        prompts.put("Rating", "Rating must be an integer or float value.");
+
+        fieldMap.forEach((key, textField) -> {
+            if (prompts.containsKey(key)) {
+                textField.setPromptText(prompts.get(key));
+            }
+        });
+    }
+
+    private static boolean checkIsbnExists(String directoryPath, String isbn) {
+        try (Stream<Path> files = Files.list(Paths.get(directoryPath))) {
+            return files.anyMatch(file -> file.getFileName().toString().equals(isbn + ".json"));
+        } catch (IOException e) {
+            System.err.println("Error checking ISBN existence: " + e.getMessage());
+            return false;
+        }
+    }
+
 
     public static void showAddBookSection(Stage stage, Scene mainScene) {
 
@@ -71,13 +101,9 @@ public class Transactions {
         }
 
 
-        //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
+        setPromptTexts(fieldMap); //Boş textFieldlarda gözükmesi gereken uyarılar.
 
-        String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
-        String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Lighter green when hovered
 
-        String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
-        String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Lighter orange when hovered
 
 
 
@@ -93,6 +119,8 @@ public class Transactions {
 
         saveButton.setOnAction(e -> {
             String isbn = fieldMap.get("ISBN").getText();
+            String ratingStr = fieldMap.get("Rating").getText();
+            String title = fieldMap.get("Title").getText();
             if (isbn.isEmpty()) {
                 // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
@@ -105,7 +133,18 @@ public class Transactions {
                 //ISBN string ifade içeriyorsa uyar.
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 13-digit numeric value.");
                 alert.showAndWait();
+            }else if(title.isEmpty()){
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Title field cannot be blank.");
+                alert.showAndWait();
             }
+            else if(!ratingStr.matches("\\d*(\\.\\d+)?|^$")){
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Rating must be an integer, float, or empty.");
+                alert.showAndWait();
+            }else if (checkIsbnExists("books", isbn)) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
+                alert.showAndWait();
+            }
+
             else {
                 try {
                     String directoryPath = "books";
@@ -119,7 +158,7 @@ public class Transactions {
 
                     //REACHING THE TEXTFIELDS THAT USER FILL BY USING MAP
 
-                    String title = fieldMap.get("Title").getText();
+                    //String title = fieldMap.get("Title").getText();
                     String subtitle = fieldMap.get("Subtitle").getText();
                     List<String> authors = Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"));
                     List<String> translators = Arrays.asList(fieldMap.get("Translators").getText().split(",\\s*"));
@@ -128,7 +167,7 @@ public class Transactions {
                     String edition = fieldMap.get("Edition").getText();
                     String cover = fieldMap.get("Cover").getText();
                     String language = fieldMap.get("Language").getText();
-                    double rating = safeParseDouble(fieldMap.get("Rating").getText());
+                    double rating = safeParseDouble(ratingStr);
                     List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
 
 
@@ -187,7 +226,6 @@ public class Transactions {
 
 
 
-
         //ADD SECTION LAYOUT SETTINGS
 
         HBox buttonBox = new HBox(20, saveButton, backButton);
@@ -209,6 +247,42 @@ public class Transactions {
         stage.setScene(addBookScene);
 
     }
+
+
+
+    private static void updateBookDetails(JSONObject existingJson, Map<String, Object> userInput) {
+        boolean isUpdated = false;
+        for (String key : userInput.keySet()) {
+            Object userValue = userInput.get(key);
+            Object jsonValue = existingJson.opt(key);
+            if ((userValue instanceof JSONArray && !jsonArraysEqual((JSONArray) userValue, existingJson.optJSONArray(key))) || !Objects.equals(userValue, jsonValue)) {
+                existingJson.put(key, userValue);
+                isUpdated = true;
+            }
+        }
+    }
+
+    private static void updateObservableList(Book selectedBook, JSONObject updatedJson) {
+
+        selectedBook.setTitle(updatedJson.getString("title"));
+        selectedBook.setSubtitle(updatedJson.getString("subtitle"));
+        selectedBook.setAuthors(Arrays.asList(updatedJson.getJSONArray("authors").toList().toArray(new String[0])));
+        selectedBook.setTranslators(Arrays.asList(updatedJson.getJSONArray("translators").toList().toArray(new String[0])));
+        selectedBook.setIsbn(updatedJson.getString("isbn"));
+        selectedBook.setPublisher(updatedJson.getString("publisher"));
+        selectedBook.setDate(updatedJson.getString("date"));
+        selectedBook.setEdition(updatedJson.getString("edition"));
+        selectedBook.setCover(updatedJson.getString("cover"));
+        selectedBook.setLanguage(updatedJson.getString("language"));
+        selectedBook.setRating(updatedJson.getDouble("rating"));
+        selectedBook.setTags(Arrays.asList(updatedJson.getJSONArray("tags").toList().toArray(new String[0])));
+
+        Platform.runLater(() -> {
+            System.out.println("Book (ISBN: " + selectedBook.getIsbn() + ") has changed.");
+        });
+    }
+
+
 
     public static void showEditBookSection(Stage stage, Scene mainScene, Book selectedBook) {
 
@@ -264,7 +338,7 @@ public class Transactions {
                     textField.setText(selectedBook.getLanguage());
                     break;
                 case "Rating":
-                    textField.setText(Double.toString(selectedBook.getRating()));
+                    textField.setText(String.valueOf(selectedBook.getRating()));
                     break;
                 case "Tags":
                     textField.setText(String.join(", ", selectedBook.getTags()));
@@ -280,12 +354,10 @@ public class Transactions {
             bookInfoEnteringField.getChildren().add(hbox);
         }
 
-        //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
-        String saveButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white;";
-        String saveButtonHoverStyle = "-fx-background-color: #4cae4c;"; // Mouse üzerine gelince
 
-        String backButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white;";
-        String backButtonHoverStyle = "-fx-background-color: #edb879;"; // Mouse üzerine gelince
+        setPromptTexts(fieldMap);
+
+
 
         //SAVE BUTTON FOR EDIT
 
@@ -308,14 +380,17 @@ public class Transactions {
             userInput.put("edition", fieldMap.get("Edition").getText());
             userInput.put("cover", fieldMap.get("Cover").getText());
             userInput.put("language", fieldMap.get("Language").getText());
-            userInput.put("rating", safeParseDouble(fieldMap.get("Rating").getText()));
+            if(userInput.get("rating")==null || userInput.get("rating")=="" || userInput.get("rating")==" "){
+                userInput.put("rating","0.0");
+            }else{userInput.put("rating", fieldMap.get("Rating").getText());
+            }
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
 
             String directoryPath = "books";
             String filePath = directoryPath + "/" + selectedBook.getIsbn() + ".json";
 
             try {
-                // Mevcut JSON dosyasını okuyun
+                // Mevcut JSON dosyasını okuma kısmı:
                 Path path = Paths.get(filePath);
                 String content = Files.readString(path);
                 JSONObject existingJson = new JSONObject(content);
@@ -323,7 +398,14 @@ public class Transactions {
                 String oldIsbn = existingJson.optString("isbn");
                 String newIsbn = userInput.get("isbn").toString();
 
-                // Kullanıcı girişi ile mevcut JSON verilerini karşılaştırın ve farkları güncelleyin
+                updateBookDetails(existingJson, userInput);
+
+
+                //If there is a String existing in rating part of json change it with default double value
+                String RatingStr = userInput.get("rating").toString();
+
+
+                // Process user input and compare it with existing JSON data
                 boolean isUpdated = false;
                 for (String key : userInput.keySet()) {
                     Object userValue = userInput.get(key);
@@ -333,7 +415,7 @@ public class Transactions {
                         JSONArray userArray = (JSONArray) userValue;
                         JSONArray jsonArray = existingJson.optJSONArray(key);
 
-                        if (jsonArraysEqual(userArray, jsonArray)) {
+                        if (!jsonArraysEqual(userArray, jsonArray)) {
                             existingJson.put(key, userValue);
                             isUpdated = true;
                         }
@@ -343,9 +425,16 @@ public class Transactions {
                     }
                 }
 
-                // Eğer güncelleme yapıldıysa, dosyayı güncelleyin
+
+
+                // Eğer güncelleme yapıldıysa, dosyayı güncelleme kısmı:
                 if (isUpdated) {
-                    // Eğer ISBN güncellendiyse, dosyanın ismini değiştir
+                    if (!oldIsbn.equals(newIsbn) && checkIsbnExists("books", newIsbn)) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
+                        alert.showAndWait();
+                        return;
+                    }
+                    // Eğer ISBN güncellendiyse, dosyanın ismini değiştirme kısmı:
                     if (!oldIsbn.equals(newIsbn)) {
                         Path newPath = Paths.get("books", newIsbn + ".json");
                         Files.move(path, newPath, StandardCopyOption.REPLACE_EXISTING);
@@ -354,23 +443,50 @@ public class Transactions {
                     Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING);
                     System.out.println("Successfully updated: " + filePath);
                 }
+                else if (oldIsbn.isEmpty() || newIsbn.isEmpty()) {
+                    // ISBN alanı boşsa, kullanıcıyı uyar çünkü json ismi ona göre belirleniyor.
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN field cannot be left blank.");
+                    alert.showAndWait();
+                } else if (oldIsbn.length() > 13 || newIsbn.length() > 13) { Alert alert = new Alert(Alert.AlertType.WARNING,
+                        //ISBN 13 rakamdan fazlaysa uyar.
+                        "ISBN cannot be more than 13-digit value.");
+                    alert.showAndWait();
+                }else if(!oldIsbn.matches("\\d+") || !newIsbn.matches("\\d+")){
+                    //ISBN string ifade içeriyorsa uyar.
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 13-digit numeric value.");
+                    alert.showAndWait();
+                }
+                else if(!RatingStr.matches("\\d*(\\.\\d+)?|^$")){
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "Rating must be an integer, float, or empty.");
+                    alert.showAndWait();
+                }else if(userInput.get("title").toString().isEmpty()){
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "Title field cannot be blank.");
+                    alert.showAndWait();
+                }
+
+
+                // Refresh the observable list and the table
+                updateObservableList(selectedBook, existingJson);
+                Platform.runLater(() -> GUI.bookTable.refresh());
 
             } catch (IOException ex) {
                 ex.printStackTrace();
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
                 alert.showAndWait();
             }
-
             stage.setScene(mainScene);
         });
 
 
-        //BACK BUTTON FOR EDIT
+        //BACK BUTTON CREATION AND ANIMATION
 
         Button backButton = new Button("Back");
         backButton.setStyle(backButtonBaseStyle);
         backButton.setOnMouseEntered(e -> backButton.setStyle(backButtonBaseStyle + backButtonHoverStyle));
         backButton.setOnMouseExited(e -> backButton.setStyle(backButtonBaseStyle));
+
+
+        //BACK BUTTON ACTION
 
         backButton.setOnAction(e -> {
             stage.setScene(mainScene);

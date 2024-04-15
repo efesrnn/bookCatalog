@@ -1,7 +1,9 @@
 package com.example.bookcatalog;
 
+//JavaFX arayüz tasarımları için gerekli importlar:
+
 import javafx.application.Application;
-import javafx.application.Platform; //Layoutlar arası geçişin kusursuz olması için ekledim.
+import javafx.application.Platform; // Layoutlar arası geçişlerin güzel olması için
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,12 +18,22 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 
+// Dosya işlemleri için Java IO importları:
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+// JSON işleme importları:
+import org.json.JSONException;
+import org.json.JSONObject;
+
+// Veri yönetimi için yardımcı importlar:
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,19 +41,27 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import org.json.JSONObject;
+// Uyarı ve hata mesajlarını yönetme:
+import java.util.logging.Level;
+import java.util.logging.Logger;
+/* CSS Edit Kısmında düzgün bir şekilde çalışmasına rağmen her save veya back butonuna
+basıldığında sürekli uyarı mesajı alıyorduk aşağıdaki import bu uyarı mesajını göstermemek için.*/
+
+
 
 
 public class GUI extends Application {
 
 
 
+    public static TableView<Book> bookTable = new TableView<>();
     public static ObservableList<Book> booksData = FXCollections.observableArrayList();
     public static FilteredList<Book> filteredBooks;
 
     public static void main(String[] args) {
+        //CSS Edit Kısmında düzgün bir şekilde çalışmasına rağmen her save veya back butonuna
+//basıldığında sürekli uyarı mesajı alıyorduk aşağıdaki logger bu uyarı mesajını göstermemek için.
+        Logger.getLogger("javafx").setLevel(Level.SEVERE);
         launch(args);
     }
 
@@ -67,6 +87,8 @@ public class GUI extends Application {
     }
 
 
+
+
     public void loadExistingBooks(String directoryPath) {
         try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
             paths.filter(Files::isRegularFile)
@@ -75,6 +97,42 @@ public class GUI extends Application {
                         try {
                             String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
                             JSONObject json = new JSONObject(content);
+
+                            boolean needsUpdate = false;
+
+                            // Handle the 'rating' field safely
+                            if (json.has("rating")) {
+                                double rating;
+                                try {
+                                    // Try to get the rating directly as a double
+                                    rating = json.getDouble("rating");
+                                } catch (JSONException ex) {
+                                    // If it's not a double, attempt to parse it from a string
+                                    try {
+                                        String ratingStr = json.getString("rating");
+                                        rating = Double.parseDouble(ratingStr);
+                                    } catch (NumberFormatException | JSONException e) {
+                                        // If parsing fails, default to 0.0
+                                        rating = 0.0;
+                                        System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0.");
+                                        needsUpdate = true;
+                                    }
+                                    json.put("rating", rating);
+                                }
+                            }
+                            if(json.get("title").toString().isEmpty()){
+                                System.out.println("Title couldn't found at: "+path);
+                                System.out.println("Executing anyway...");
+                                Alert alert = new Alert(Alert.AlertType.WARNING, "Title couldn't found at: "+ path);
+                                alert.showAndWait();
+                            }
+
+                            // Update the file if needed
+                            if (needsUpdate) {
+                                Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                                System.out.println("Updated JSON file at: " + path);
+                            }
+
                             Book book = Book.fromJSON(json);
                             booksData.add(book);
                         } catch (IOException e) {
@@ -85,6 +143,9 @@ public class GUI extends Application {
             e.printStackTrace();
         }
     }
+
+
+
     //COLUMN CREATION METHOD FOR STRING TYPE
     private <S, T> TableColumn<S, T> createColumn(String title, java.util.function.Function<S, T> propertyValueFactory) {
         TableColumn<S, T> column = new TableColumn<>(title);
@@ -111,22 +172,41 @@ public class GUI extends Application {
         }
     }
 
+
+
+    private void showBookDetails(Book book) {
+        try {
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("BookData.fxml"));
+            Parent root = loader.load();
+            TableviewBookDataController controller = loader.getController();
+            Stage stage = new Stage();
+            controller.setStage(stage);
+            controller.setBook(book);
+            stage.setScene(new Scene(root));
+            stage.setTitle(book.getTitle()+" Information Page");
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     @Override
     public void start(Stage stage) {
-        loadExistingBooks("books");
-        System.out.println(" ");
-        System.out.println(" ");
+        System.out.println(" "); System.out.println(" ");
         System.out.println("--------------------------------------------------------------------");
         System.out.println("             WELCOME TO BOOK CATALOG'S COMMAND LINE!");
         System.out.println("                    Logs will be shown here.");
         System.out.println("--------------------------------------------------------------------");
-        System.out.println(" ");
-        System.out.println(" ");
-        System.out.println("                           TEAM-5");
-        System.out.println(" ");
+        System.out.println(" "); System.out.println("                           TEAM-5"); System.out.println(" ");
+        System.out.println("--------------------------------------------------------------------");
+
+        loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.3] - Manage your book collection efficiently");
+        Label titleLabel = new Label("Book Catalog [v1.4]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -216,9 +296,18 @@ public class GUI extends Application {
 
         //TABLE & COLUMNS
 
-        //TABLEVIEW WITH NO COLUMNS
+        bookTable.setRowFactory(tv -> {
+            TableRow<Book> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Book rowData = row.getItem();
+                    showBookDetails(rowData);
+                }
+            });
+            return row;
+        });
 
-        TableView<Book> bookTable = new TableView<>();
+
         bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
         bookTable.setItems(GUI.filteredBooks);
         bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -335,8 +424,8 @@ public class GUI extends Application {
             // Check if exactly one book is selected
             if (selectedBooks.size() == 1) {
                 Book selectedBook = selectedBooks.get(0); // Get the single selected book
-                Transactions.showEditBookSection(stage, mainScene, selectedBook);
                 bookTable.refresh(); // Refresh the TableView after editing
+                Transactions.showEditBookSection(stage, mainScene, selectedBook);
             } else if (selectedBooks.isEmpty()) {
                 // No book selected
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a book from the table to edit.");

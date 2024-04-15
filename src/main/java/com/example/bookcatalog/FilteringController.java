@@ -3,6 +3,7 @@ package com.example.bookcatalog;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -17,6 +18,8 @@ public class FilteringController {
     private Button clearButton;
     @FXML
     private VBox tagsContainer;
+    @FXML
+    private Label noTagsLabel;
     private Map<String, CheckBox> tagCheckboxes = new HashMap<>();
     private Stage stage;
 
@@ -59,10 +62,15 @@ public class FilteringController {
         }
 
         tagsContainer.getChildren().clear();
-        for (String tag : uniqueTags) {
-            CheckBox checkBox = new CheckBox(tag);
-            tagsContainer.getChildren().add(checkBox);
-            tagCheckboxes.put(tag, checkBox);
+        if (uniqueTags.isEmpty()) {
+            noTagsLabel.setVisible(true); // Eğer tag yoksa, uyarı mesajını göster
+        } else {
+            noTagsLabel.setVisible(false); // Eğer tag varsa, uyarı mesajını gizle
+            for (String tag : uniqueTags) {
+                CheckBox checkBox = new CheckBox(tag);
+                tagsContainer.getChildren().add(checkBox);
+                tagCheckboxes.put(tag, checkBox);
+            }
         }
     }
     // Restores the check states of the checkboxes based on previously saved selected tags
