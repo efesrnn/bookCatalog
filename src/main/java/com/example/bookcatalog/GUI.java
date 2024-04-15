@@ -179,21 +179,21 @@ public class GUI extends Application {
             controller.setStage(stage);
             controller.setBook(book);
 
-            // Path to the image file
+            // Resim dosyasına olan path
             String imagePath = "src/coverImages/" + book.getIsbn() + ".jpg";
             File imageFile = new File(imagePath);
             Image image;
 
             if (imageFile.exists()) {
-                // Convert the file path to URI, then to URL, and load it into an Image object
+                // Dosya yolunu URI'ye, sonra da URL'ye dönüştürüp bir Image nesnesine yükleme işlemi.
                 image = new Image(imageFile.toURI().toString());
             } else {
-                // Default image if the specific book image does not exist
+                // Belirli bir kitap resmi yoksa varsayılan resmi kullanıyoruz.
                 File defaultImageFile = new File("src/coverImages/default_image.jpg");
                 image = new Image(defaultImageFile.toURI().toString());
             }
 
-            // Set the image in the ImageView
+            // ImageView'da resmi ayarlama.
             controller.getCoverImageView().setImage(image);
 
             stage.setScene(new Scene(root));

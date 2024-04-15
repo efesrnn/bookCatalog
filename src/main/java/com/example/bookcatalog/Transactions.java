@@ -66,7 +66,7 @@ public class Transactions {
     private static String getFileExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
         if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
-            return fileName.substring(dotIndex); // Returns extension with dot, e.g., ".jpg"
+            return fileName.substring(dotIndex); // Bu fonksiyonla, verilen dosya adından dosya uzantısını noktasıyla birlikte çıkarıp döndürdük.
         }
         return ""; // Default no extension
     }
@@ -110,7 +110,7 @@ public class Transactions {
         Button selectImageButton = new Button("Select Image");
         Button removeImageButton = new Button("Remove Image");
 
-// Load default image initially
+// Bu kod bloğuyla, başlangıçta varsayılan bir resmi yüklüyoruz.
         try {
             File file = new File("src/coverImages/default_image.jpg");
             if (file.exists()) {
@@ -127,7 +127,7 @@ public class Transactions {
 
 
 
-// Then use `finalCoverImagePath` within your lambda expression
+// Sonrasında, finalCoverImagePath değişkeni lambda ifadesi içinde kullanıyoruz.
         selectImageButton.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Only .jpg format will be accepted.");
             alert.showAndWait();
@@ -141,7 +141,7 @@ public class Transactions {
             if (selectedFile != null) {
                 Image image = new Image(selectedFile.toURI().toString());
                 imageView.setImage(image);
-                // Update `coverImagePath` outside the lambda if necessary
+                // Eğer gerekirse, lambda dışında coverImagePath'i güncelliyoruz.
                 coverImagePath = selectedFile.getAbsolutePath();
             }
         });
@@ -151,7 +151,7 @@ public class Transactions {
                 File defaultImageFile = new File("src/coverImages/default_image.jpg");
                 if (defaultImageFile.exists()) {
                     imageView.setImage(new Image(defaultImageFile.toURI().toString()));
-                    coverImagePath = defaultImageFile.getAbsolutePath(); // Set coverImagePath to the path of the default image
+                    coverImagePath = defaultImageFile.getAbsolutePath(); // coverImagePath değişkenini varsayılan resmin path'ine ayarladık.
                 } else {
                     System.err.println("Default image file not found: " + defaultImageFile.getAbsolutePath());
                 }
@@ -167,14 +167,14 @@ public class Transactions {
         layout.getChildren().addAll(imageView, imageControls);
 
 
-        //NEW VBOX FOR BODY (TO INCLUDE TEXT FIELD AND LABELS)
+        //Body için yeni VBOX (Text Field ve Label'i dahil edebilmek için)
 
         VBox bookInfoEnteringField = new VBox(10);
         bookInfoEnteringField.setAlignment(Pos.TOP_CENTER);
         bookInfoEnteringField.setPadding(new Insets(20, 40, 20, 40));
 
 
-        //NEW MAP FOR ALL THE BOOK DATA
+        //Bütün kitap dataları için yeni Map kullanıyoruz.
 
         Map<String, TextField> fieldMap = new HashMap<>();
         String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover", "Language", "Rating", "Tags"};
@@ -226,21 +226,21 @@ public class Transactions {
             if (coverImagePath != null) {
                 try {
                     Path sourcePath = Paths.get(coverImagePath);
-                    // Determine the file extension dynamically
+                    // Dosya uzantısını dinamik olarak belirledik.
                     String fileExtension = "";
                     int extensionIndex = coverImagePath.lastIndexOf('.');
                     if (extensionIndex != -1) {
                         fileExtension = coverImagePath.substring(extensionIndex); // captures extension including dot, e.g., ".jpg"
                     }
 
-                    // Ensure directory exists and determine the target path with the correct extension
+                    // Klasörün var olduğundan emin olup sonrasında doğru uzantıya sahip hedef yolunu belirliyoruz.
                     Path targetPath = Paths.get("src/coverImages", isbn + fileExtension);
                     Files.createDirectories(targetPath.getParent());
 
-                    // Copy the image file to the target location, replacing any existing file
+                    // Bu kod bloğunun amacı resim dosyasını hedef konuma kopyaladıktan sonra var olan dosyanın üzerine yazdırma işlemi."
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                    // Update coverImagePath to reflect the new path
+                    // coverImagePath'i yeni yolunu yansıtır şekilde güncelliyoruz.
                     coverImagePath = targetPath.toString();
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -415,29 +415,29 @@ public class Transactions {
         layout.setPadding(new Insets(10));
         layout.setAlignment(Pos.TOP_CENTER);
 
-        // Creating an ImageView to display the book cover image
+        //Kitap kapağının resmini göstermek için bir ImageView oluşturduk.
         ImageView imageView = new ImageView();
-        imageView.setFitHeight(350);
-        imageView.setFitWidth(350);
-        imageView.setPreserveRatio(true);
+        imageView.setFitHeight(350); //Görüntüleme alanının yüksekliğini 350 piksel olarak ayarlıyoruz.
+        imageView.setFitWidth(350);  //Görüntüleme alanının genişliğini de aynı şekilde 350 piksel olarak ayarlıyoruz.
+        imageView.setPreserveRatio(true); //Oranı koruyup görüntü ölçeklendirme.
 
-        // Determine the path for the existing book cover image or use default
+        // Mevcut kitap kapağı resminin path'ini belirledikten sonra varsayılanı kullanıyoruz.
         final String[] coverImagePath = {"src/coverImages/" + selectedBook.getIsbn() + ".jpg"};
         File coverImageFile = new File(coverImagePath[0]);
 
         if (!coverImageFile.exists()) {
-            coverImagePath[0] = "src/coverImages/default_image.jpg"; // Default cover path
+            coverImagePath[0] = "src/coverImages/default_image.jpg"; // Varsayılan kitap path'i
         }
 
 
-        // Set the image in the ImageView, ensure the path is a proper URI
+        // ImageView'da görüntüyü ayarladık ve emin olmak için yolun düzgün bir URI olup olmadığını kontrol ettik.
         imageView.setImage(new Image(new File(coverImagePath[0]).toURI().toString()));
-        // Button to select a new cover image
+        //Yeni bir kapak resmini seçmek için kullanılan buton.
         Button selectImageButton = new Button("Select Image");
-        // Button to remove the current cover image
+        // Mevcutta bulunan bir kapak resmini kaldırmak için kullandığımız buton.
         Button removeImageButton = new Button("Remove Image");
 
-        // Handler for selecting a new image using a file chooser
+        // Dosya seçici kullanarak yeni bir resim seçme işlemi için bir handler ayarladık.
         selectImageButton.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Only .jpg format will be accepted.");
             alert.showAndWait();
@@ -450,17 +450,17 @@ public class Transactions {
             File selectedFile = fileChooser.showOpenDialog(stage);
             if (selectedFile != null) {
                 try {
-                    // Define paths for copying
+                    // Kopyalama path'ini tanımlama
                     Path sourcePath = selectedFile.toPath();
                     Path targetPath = Paths.get("src/coverImages", selectedBook.getIsbn() + getFileExtension(selectedFile.getName()));
 
-                    // Copy the new image, replacing the existing file
+                    // Yeni resmi kopyalayıp ve mevcut dosyanın üzerine yazma işlemi.
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                    // Update the ImageView
+                    // ImageView'i güncelleme
                     imageView.setImage(new Image(targetPath.toUri().toString()));
 
-                    // Optionally update the book's cover image path if stored
+                    // Opsiyonel olarak eğer gerekliyse, kitabın kapak resmi yolunu kaydedilmişse güncelledik.
                     selectedBook.setCoverImagePath(targetPath.toString());
 
                 } catch (IOException ex) {
@@ -477,7 +477,7 @@ public class Transactions {
 
         removeImageButton.setOnAction(e -> {
             try {
-                // Define the path to the default image
+                // Varsayılan resmin path'ini tanımlamak
                 File defaultImageFile = new File("src/coverImages/default_image.jpg");
                 if (defaultImageFile.exists()) {
                     imageView.setImage(new Image(defaultImageFile.toURI().toString()));
@@ -485,13 +485,13 @@ public class Transactions {
                     System.err.println("Default image file not found.");
                 }
 
-                // Attempt to delete the cover image file with various extensions
+                // Çeşitli uzantılara sahip kapak görseli dosyasının silinmesini denemek.
                 String[] possibleExtensions = {".jpg",};
                 boolean fileDeleted = false;
                 for (String extension : possibleExtensions) {
                     File currentCoverImageFile = new File("src/coverImages/" + selectedBook.getIsbn() + extension);
                     if (currentCoverImageFile.exists()) {
-                        Files.delete(currentCoverImageFile.toPath());  // Delete the current cover image file
+                        Files.delete(currentCoverImageFile.toPath());  // Geçerli kapak resmi dosyasını sildik.
                         System.out.println("Cover image file deleted successfully: " + currentCoverImageFile.getName());
                         fileDeleted = true;
                         break;
@@ -507,17 +507,17 @@ public class Transactions {
                 System.err.println("Failed to load default image: " + ex.getMessage());
             }
 
-            // Update the book's cover image path to null
+            // Kitabın kapak resmi path'ini 'null' olarak güncelledik.
             selectedBook.setCoverImagePath(null);
         });
 
 
 
-        // Layout for image controls
+        // LAYOUT FOR IMAGE CONTROLS
         HBox imageControls = new HBox(10, selectImageButton, removeImageButton);
         imageControls.setAlignment(Pos.CENTER);
 
-        // Adding the ImageView and its controls to the main layout
+        // ADDING THE NEW IMAGEVIEW AND ITS CONTROLS TO THE MAIN LAYOUT
         layout.getChildren().addAll(imageView, imageControls);
 
         VBox bookInfoEnteringField = new VBox(10);
@@ -595,7 +595,7 @@ public class Transactions {
 
 
         saveButton.setOnAction(e -> {
-            // Validate necessary fields
+            // Gerekli alanları doğrulama işlemi.
             String isbn = fieldMap.get("ISBN").getText();
             String title = fieldMap.get("Title").getText();
             String ratingStr = fieldMap.get("Rating").getText();
@@ -637,17 +637,17 @@ public class Transactions {
             userInput.put("rating", rating);
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
 
-            // Define and calculate paths outside the lambda to ensure they are effectively final.
+            // Lambda dışında yolları tanımlayıp hesapladık.
             final String localCoverImagePath = coverImagePath[0]; // Capture the current state of coverImagePath
             final String currentISBNPath = "src/coverImages/" + selectedBook.getIsbn() + ".jpg";
             final String newISBNPath = "src/coverImages/" + isbn + ".jpg";
 
-// Use these paths in your operations and ensure no modifications are done to them post capture.
+// Bu yolları işlemlerimizde kullandık ve yakalandıktan sonra üzerlerinde değişiklik yapılmadığından emin olduk.
             if (localCoverImagePath != null) {
                 try {
                     Path sourcePath = Paths.get(localCoverImagePath);
                     Path targetPath = Paths.get(currentISBNPath);
-                    Files.createDirectories(targetPath.getParent()); // Ensure the directory exists
+                    Files.createDirectories(targetPath.getParent()); //Directory'nin var olduğundan emin olduk ki herhangi bir hatayla karşılaşılmasın.
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     userInput.put("coverImagePath", targetPath.toString());
                 } catch (NoSuchFileException ex2){
@@ -661,7 +661,7 @@ public class Transactions {
                 }
             }
 
-            if (!selectedBook.getIsbn().equals(isbn)) { // Check if ISBN has changed
+            if (!selectedBook.getIsbn().equals(isbn)) {  // ISBN'in değişip değişmediğini kontrol ediyoruz.
                 try {
                     Path oldJsonPath = Paths.get("books", selectedBook.getIsbn() + ".json");
                     Path newJsonPath = Paths.get("books", isbn + ".json");
@@ -672,7 +672,7 @@ public class Transactions {
                     if (Files.exists(oldImagePath)) {
                         Files.move(oldImagePath, newImagePath, StandardCopyOption.REPLACE_EXISTING);
                     }
-                    // Update the coverImagePath after moving to reflect new state.
+                    // Dosya taşındıktan sonra yeni oluşacak duruma göre coverImagePath'i güncelledik..
                     coverImagePath[0] = newImagePath.toString();
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -687,7 +687,7 @@ public class Transactions {
             String filePath = directoryPath + "/" + isbn + ".json";
 
             try {
-                Files.createDirectories(Paths.get(directoryPath)); // Ensure the directory exists
+                Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
                 Path path = Paths.get(filePath);
                 JSONObject existingJson = new JSONObject(readJsonFile(path));
                 System.out.println("Json and entered data successfully compared.");
@@ -785,8 +785,8 @@ public class Transactions {
         });
         Platform.runLater(() -> {
             System.out.println("Layout has been refreshed due to change of files.");
-            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldır.
-            stage.setScene(mainScene); // Main Layout'u yeniden yükle refresh için.
+            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldırmak.
+            stage.setScene(mainScene); // Refresh için Main Layout'u yeniden yükleme.
         });
     }
 
