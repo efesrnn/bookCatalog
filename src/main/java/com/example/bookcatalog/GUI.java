@@ -12,6 +12,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -22,6 +24,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 
 // Dosya işlemleri için Java IO importları:
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -100,34 +103,23 @@ public class GUI extends Application {
 
                             boolean needsUpdate = false;
 
-                            // Rating double olduğu için string-double çevrimleri:
+                            // Rating double çevrim kontrolü
                             if (json.has("rating")) {
-                                double rating;
                                 try {
-                                    // Double type verisi varsa hiç ellemeden direkt alıyoruz.
-                                    rating = json.getDouble("rating");
+                                    json.getDouble("rating"); // Eğer bu başarısız olursa JSONException fırlatır
                                 } catch (JSONException ex) {
-                                    //String type algılanırsa parseDouble ile double'a çeviriyoruz.
                                     try {
-                                        String ratingStr = json.getString("rating");
-                                        rating = Double.parseDouble(ratingStr);
-                                    } catch (NumberFormatException | JSONException e) {
-                                        //Eğer çevrim başarısız olursa demekki karakter girilmiştir. Default value olan 0.0'ı atıyoruz.
-                                        rating = 0.0;
-                                        System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0.");
+                                        double rating = Double.parseDouble(json.getString("rating"));
+                                        json.put("rating", rating);
+                                    } catch (NumberFormatException e) {
+                                        json.put("rating", 0.0);
                                         needsUpdate = true;
+                                        System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0 at: " + path);
                                     }
-                                    json.put("rating", rating);
                                 }
                             }
-                            if(json.get("title").toString().isEmpty()){
-                                System.out.println("Title couldn't found at: "+path);
-                                System.out.println("Executing anyway...");
-                                Alert alert = new Alert(Alert.AlertType.WARNING, "Title couldn't found at: "+ path);
-                                alert.showAndWait();
-                            }
 
-                            //Eğer string type varsa her açışta sistem içerisinde değiştirmek yerine dosyayı da güncelliyoruz.
+                            // JSON dosyası güncellenirse
                             if (needsUpdate) {
                                 Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
                                 System.out.println("Updated JSON file at: " + path);
@@ -143,6 +135,7 @@ public class GUI extends Application {
             e.printStackTrace();
         }
     }
+
 
 
 
@@ -174,24 +167,48 @@ public class GUI extends Application {
 
 
 
+
+
     //Tableview kitap bilgisine çift tıklayınca detaylı bilgi penceresini açmak için:
     private void showBookDetails(Book book) {
         try {
-
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/bookcatalog/BookData.fxml"));
             Parent root = loader.load();
             TableviewBookDataController controller = loader.getController();
             Stage stage = new Stage();
             controller.setStage(stage);
             controller.setBook(book);
+
+            // Path to the image file
+            String imagePath = "src/coverImages/" + book.getIsbn() + ".jpg";
+            File imageFile = new File(imagePath);
+            Image image;
+
+            if (imageFile.exists()) {
+                // Convert the file path to URI, then to URL, and load it into an Image object
+                image = new Image(imageFile.toURI().toString());
+            } else {
+                // Default image if the specific book image does not exist
+                File defaultImageFile = new File("src/coverImages/default_image.jpg");
+                image = new Image(defaultImageFile.toURI().toString());
+            }
+
+            // Set the image in the ImageView
+            controller.getCoverImageView().setImage(image);
+
             stage.setScene(new Scene(root));
-            stage.setTitle(book.getTitle()+" Information Page");
+            stage.setTitle(book.getTitle() + " Information Page");
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("An error occurred while trying to open book information window");
         }
     }
+
+
+
+
+
 
 
 
@@ -208,7 +225,7 @@ public class GUI extends Application {
         loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.5]");
+        Label titleLabel = new Label("Book Catalog [v1.6]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -375,7 +392,7 @@ public class GUI extends Application {
         mainLayout.setCenter(tableContainer);
         mainLayout.setBottom(bottomLayout);
 
-        Scene mainScene = new Scene(mainLayout, 800, 600);
+        Scene mainScene = new Scene(mainLayout, 1200, 1000);
         stage.setTitle("Book Catalog");
         stage.setScene(mainScene);
         stage.show();

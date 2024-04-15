@@ -2,7 +2,11 @@ package com.example.bookcatalog;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+
+import java.nio.file.Paths;
 
 public class TableviewBookDataController {
     @FXML
@@ -29,6 +33,8 @@ public class TableviewBookDataController {
     private Label ratingLabel;
     @FXML
     private Label tagsLabel;
+    @FXML
+    private ImageView coverImageView;
 
     private Stage stage;
     private Book book;
@@ -41,6 +47,10 @@ public class TableviewBookDataController {
         this.book = book;
         updateDetails();
     }
+    public ImageView getCoverImageView() {
+        return coverImageView;
+    }
+
 
     private void updateDetails() {
         titleLabel.setText(book.getTitle());
@@ -55,6 +65,16 @@ public class TableviewBookDataController {
         languageLabel.setText(book.getLanguage());
         ratingLabel.setText(String.format("%.2f", book.getRating()));
         tagsLabel.setText(String.join(", ", book.getTags()));
+
+        if (book.getCoverImagePath() != null && !book.getCoverImagePath().isEmpty()) {
+            // Dosya yolunu doğru şekilde ayarlayın
+            Image image = new Image(Paths.get(book.getCoverImagePath()).toUri().toString());
+            coverImageView.setImage(image);
+        } else {
+            // Varsayılan bir resim veya boş bir görüntü ayarlayabilirsiniz
+            coverImageView.setImage(new Image("file:src/coverImages/default_image.jpg"));
+        }
+
         System.out.println("Detailed book information layout has opened.");
     }
 }

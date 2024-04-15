@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Book {
+    private String coverImagePath;
     private String title;
     private String subtitle;
     private List<String> authors;
@@ -21,9 +22,10 @@ public class Book {
     private double rating; //4.5 falan olabilir double kalsın.
     private List<String> tags; //Hoca birkaç tag girmiş olabilir taklaya gelmeyelim.
     //CONSTRUCTOR
-    public Book(String title, String subtitle, List<String> authors, List<String> translators, String isbn,
-                String publisher, String date, String edition, String cover, String language, double rating,
-                List<String> tags) {
+    public Book(String coverImagePath, String title, String subtitle, List<String> authors, List<String> translators,
+                String isbn, String publisher, String date, String edition,
+                String cover, String language, double rating, List<String> tags) {
+        this.coverImagePath = coverImagePath;
         this.title = title;
         this.subtitle = subtitle;
         this.authors = authors;
@@ -39,6 +41,7 @@ public class Book {
     }
 
     public static Book fromJSON(JSONObject json) {
+        String coverImagePath = json.optString("coverImagePath", null);
         String title = json.getString("title");
         String subtitle = json.optString("subtitle", "");
         List<String> authors = json.getJSONArray("authors").toList().stream()
@@ -58,10 +61,12 @@ public class Book {
                 .map(Object::toString)
                 .collect(Collectors.toList());
 
-        return new Book(title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
+        return new Book(coverImagePath,title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
     }
 
     //GETTER & SETTER
+    public String getCoverImagePath() {return coverImagePath;}
+    public void setCoverImagePath(String coverImagePath) {this.coverImagePath = coverImagePath;}
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getSubtitle() { return subtitle; }
