@@ -70,7 +70,7 @@ public class Transactions {
         if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
             return fileName.substring(dotIndex); // Bu fonksiyonla, verilen dosya adından dosya uzantısını noktasıyla birlikte çıkarıp döndürdük.
         }
-        return ""; // Default no extension
+        return ""; // Default'ta uzantı yok.
     }
 
     private static boolean checkIsbnExists(String directoryPath, String isbn) {
@@ -233,7 +233,7 @@ public class Transactions {
                     String fileExtension = "";
                     int extensionIndex = coverImagePath.lastIndexOf('.');
                     if (extensionIndex != -1) {
-                        fileExtension = coverImagePath.substring(extensionIndex); // captures extension including dot, e.g., ".jpg"
+                        fileExtension = coverImagePath.substring(extensionIndex); // Nokta dahil olarak uzantıyı (".jpg") tutuyoruz.
                     }
 
                     // Klasörün var olduğundan emin olup sonrasında doğru uzantıya sahip hedef yolunu belirliyoruz.
@@ -643,7 +643,7 @@ public class Transactions {
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
 
             // Lambda dışında yolları tanımlayıp hesapladık.
-            final String localCoverImagePath = coverImagePath[0]; // Capture the current state of coverImagePath
+            final String localCoverImagePath = coverImagePath[0]; // coverImagePath'in güncel halini tutuyoruz.
             final String currentISBNPath = "src/coverImages/" + selectedBook.getIsbn() + ".jpg";
             final String newISBNPath = "src/coverImages/" + isbn + ".jpg";
 

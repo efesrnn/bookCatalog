@@ -471,8 +471,8 @@ public class GUI extends Application {
 
             //1 kitap seçiliyse if statementı:
             if (selectedBooks.size() == 1) {
-                Book selectedBook = selectedBooks.get(0); // Get the single selected book
-                bookTable.refresh(); // Refresh the TableView after editing
+                Book selectedBook = selectedBooks.get(0); // Seçilen kitabı tutuyoruz.
+                bookTable.refresh(); // Kitabı düzenledikten sonra TableView'ı yeniliyoruz.
                 Transactions.showEditBookSection(stage, mainScene, selectedBook);
             } else if (selectedBooks.isEmpty()) {
                 //kitap seçili olmama durumu:
