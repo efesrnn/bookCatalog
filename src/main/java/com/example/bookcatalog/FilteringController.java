@@ -88,6 +88,7 @@ public class FilteringController {
         Set<String> selectedTags = tagCheckboxes.values().stream().filter(CheckBox::isSelected).map(CheckBox::getText).collect(Collectors.toSet());
 
         savedSelectedTags = new HashSet<>(selectedTags);
+        //Kullanıcı belirli tagleri girdikten sonra pencereyi kapatıp geri girdiğinde önceki seçili taglerin hala seçili kalması için kullandığımız kod.
 
         GUI.filteredBooks.setPredicate(book -> selectedTags.isEmpty() || book.getTags().stream().anyMatch(selectedTags::contains));
         System.out.println("Selected tags applied.");

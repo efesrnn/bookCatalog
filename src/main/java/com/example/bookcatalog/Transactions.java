@@ -62,6 +62,8 @@ public class Transactions {
 
         System.out.println("Prompt texts successfully loaded.");
     }
+    //setPromptTexts sınıfı ile form alanlarına ipuçları ekleyerek kullanıcıların doğru ve düzenli bilgi girmelerini sağlıyoruz.
+    //Örneğin, birden fazla yazar veya çevirmen girerken virgül kullanılmalıdır. Bu sayede olası hataları önlüyoruz.
 
     private static String getFileExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
@@ -79,6 +81,7 @@ public class Transactions {
             return false;
         }
     }
+    //Verilen ISBN numarasını içeren dosyanın bir klasörde olup olmadığını kontrol edip ona göre true veya false dönüyor.
 
     private static String readJsonFile(Path path) {
         try {
@@ -385,6 +388,8 @@ public class Transactions {
         }
         System.out.println("Book details has been updated.");
     }
+// Kullanıcının girdiği bilgilerle var olan kitap detaylarını güncelliyoruz.
+// Eğer yeni girdi önceki bilgilerden farklıysa, gerekli bilgiyi güncelliyoruz ve güncelleme yapıldığını belirten bir mesaj gösteriyoruz.
 
     private static void updateObservableList(Book selectedBook, JSONObject updatedJson) {
 
@@ -693,7 +698,7 @@ public class Transactions {
                 System.out.println("Json and entered data successfully compared.");
                 updateBookDetails(existingJson, userInput);
 
-                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); //Bu satırda, mevcut JSON verilerini dosyaya yazarak mevcut içeriği değiştiriyoruz.
                 System.out.println("Successfully updated: " + path);
                 updateObservableList(selectedBook, existingJson);
                 Platform.runLater(() -> GUI.bookTable.refresh());

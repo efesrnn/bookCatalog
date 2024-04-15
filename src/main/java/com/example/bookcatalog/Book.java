@@ -15,12 +15,12 @@ public class Book {
     private List<String> translators;
     private String isbn;
     private String publisher;
-    private String date; //Proje dosyasını tekrar oku gerekirse int yap.
+    private String date;
     private String edition;
     private String cover; //Resim file path ile kullanılıyor o yüzden String kalsın.
     private String language;
-    private double rating; //4.5 falan olabilir double kalsın.
-    private List<String> tags; //Hoca birkaç tag girmiş olabilir taklaya gelmeyelim.
+    private double rating; //4.5 gibi noktalı bir değer olabileceği için int yerine double kullanıyoruz.
+    private List<String> tags; //Birden fazla tag olabileceği için bir String List'i kullanıyoruz.
     //CONSTRUCTOR
     public Book(String coverImagePath, String title, String subtitle, List<String> authors, List<String> translators,
                 String isbn, String publisher, String date, String edition,
