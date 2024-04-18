@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.ImageView?>
+
+<VBox xmlns="http://javafx.com/javafx/8.0.171"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.bookcatalog.TableviewBookDataController" spacing="20"
+      alignment="CENTER">
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+    <Label text="Book Details" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" VBox.vgrow="NEVER"/>
+
+    <ImageView fx:id="coverImageView" fitHeight="350" fitWidth="350" preserveRatio="true"/>
+
+    <GridPane hgap="10" vgap="15" alignment="CENTER">
+        <columnConstraints>
+            <ColumnConstraints minWidth="100" prefWidth="150" hgrow="SOMETIMES"/>
+            <ColumnConstraints minWidth="200" hgrow="ALWAYS"/>
+        </columnConstraints>
+
+        <children>
+            <Label text="Title:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <Label fx:id="titleLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-size: 16px;"/>
+
+            <Label text="Subtitle:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <Label fx:id="subtitleLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" style="-fx-font-size: 16px;"/>
+
+            <Label text="Authors:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <Label fx:id="authorsLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" style="-fx-font-size: 16px;"/>
+
+            <Label text="Translators:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+            <Label fx:id="translatorsLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" style="-fx-font-size: 16px;"/>
+
+            <Label text="ISBN:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+            <Label fx:id="isbnLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" style="-fx-font-size: 16px;"/>
+
+            <Label text="Publisher:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+            <Label fx:id="publisherLabel" GridPane.columnIndex="1" GridPane.rowIndex="5" style="-fx-font-size: 16px;"/>
+
+            <Label text="Publication Date:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+            <Label fx:id="dateLabel" GridPane.columnIndex="1" GridPane.rowIndex="6" style="-fx-font-size: 16px;"/>
+
+            <Label text="Edition:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+            <Label fx:id="editionLabel" GridPane.columnIndex="1" GridPane.rowIndex="7" style="-fx-font-size: 16px;"/>
+
+            <Label text="Cover:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+            <Label fx:id="coverLabel" GridPane.columnIndex="1" GridPane.rowIndex="8" style="-fx-font-size: 16px;"/>
+
+            <Label text="Language:" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
+            <Label fx:id="languageLabel" GridPane.columnIndex="1" GridPane.rowIndex="9" style="-fx-font-size: 16px;"/>
+
+            <Label text="Rating:" GridPane.columnIndex="0" GridPane.rowIndex="10"/>
+            <Label fx:id="ratingLabel" GridPane.columnIndex="1" GridPane.rowIndex="10" style="-fx-font-size: 16px;"/>
+
+            <Label text="Tags:" GridPane.columnIndex="0" GridPane.rowIndex="11"/>
+            <Label fx:id="tagsLabel" GridPane.columnIndex="1" GridPane.rowIndex="11" style="-fx-font-size: 16px;"/>
+        </children>
+    </GridPane>
+</VBox>

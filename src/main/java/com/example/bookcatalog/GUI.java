@@ -1,7 +1,9 @@
 package com.example.bookcatalog;
 
+//JavaFX arayüz tasarımları için gerekli importlar:
+
 import javafx.application.Application;
-import javafx.application.Platform; //Layoutlar arası geçişin kusursuz olması için ekledim.
+import javafx.application.Platform; // Layoutlar arası geçişlerin güzel olması için
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -10,18 +12,31 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 
+// Dosya işlemleri için Java IO importları:
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+// JSON işleme importları:
+import org.json.JSONException;
+import org.json.JSONObject;
+
+// Veri yönetimi için yardımcı importlar:
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,19 +44,27 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import org.json.JSONObject;
+// Uyarı ve hata mesajlarını yönetme:
+import java.util.logging.Level;
+import java.util.logging.Logger;
+/* CSS Edit Kısmında düzgün bir şekilde çalışmasına rağmen her save veya back butonuna
+basıldığında sürekli uyarı mesajı alıyorduk aşağıdaki import bu uyarı mesajını göstermemek için.*/
+
+
 
 
 public class GUI extends Application {
 
 
 
+    public static TableView<Book> bookTable = new TableView<>();
     public static ObservableList<Book> booksData = FXCollections.observableArrayList();
     public static FilteredList<Book> filteredBooks;
 
     public static void main(String[] args) {
+        //CSS Edit Kısmında düzgün bir şekilde çalışmasına rağmen her save veya back butonuna
+//basıldığında sürekli uyarı mesajı alıyorduk aşağıdaki logger bu uyarı mesajını göstermemek için.
+        Logger.getLogger("javafx").setLevel(Level.SEVERE);
         launch(args);
     }
 
@@ -67,6 +90,8 @@ public class GUI extends Application {
     }
 
 
+
+
     public void loadExistingBooks(String directoryPath) {
         try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
             paths.filter(Files::isRegularFile)
@@ -75,6 +100,31 @@ public class GUI extends Application {
                         try {
                             String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
                             JSONObject json = new JSONObject(content);
+
+                            boolean needsUpdate = false;
+
+                            // Rating double çevrim kontrolü
+                            if (json.has("rating")) {
+                                try {
+                                    json.getDouble("rating"); // Eğer bu başarısız olursa JSONException fırlatır
+                                } catch (JSONException ex) {
+                                    try {
+                                        double rating = Double.parseDouble(json.getString("rating"));
+                                        json.put("rating", rating);
+                                    } catch (NumberFormatException e) {
+                                        json.put("rating", 0.0);
+                                        needsUpdate = true;
+                                        System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0 at: " + path);
+                                    }
+                                }
+                            }
+
+                            // JSON dosyası güncellenirse
+                            if (needsUpdate) {
+                                Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                                System.out.println("Updated JSON file at: " + path);
+                            }
+
                             Book book = Book.fromJSON(json);
                             booksData.add(book);
                         } catch (IOException e) {
@@ -85,6 +135,10 @@ public class GUI extends Application {
             e.printStackTrace();
         }
     }
+
+
+
+
     //COLUMN CREATION METHOD FOR STRING TYPE
     private <S, T> TableColumn<S, T> createColumn(String title, java.util.function.Function<S, T> propertyValueFactory) {
         TableColumn<S, T> column = new TableColumn<>(title);
@@ -111,22 +165,67 @@ public class GUI extends Application {
         }
     }
 
+
+
+
+
+    //Tableview kitap bilgisine çift tıklayınca detaylı bilgi penceresini açmak için:
+    private void showBookDetails(Book book) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/bookcatalog/BookData.fxml"));
+            Parent root = loader.load();
+            TableviewBookDataController controller = loader.getController();
+            Stage stage = new Stage();
+            controller.setStage(stage);
+            controller.setBook(book);
+
+            // Resim dosyasına olan path
+            String imagePath = "src/coverImages/" + book.getIsbn() + ".jpg";
+            File imageFile = new File(imagePath);
+            Image image;
+
+            if (imageFile.exists()) {
+                // Dosya yolunu URI'ye, sonra da URL'ye dönüştürüp bir Image nesnesine yükleme işlemi.
+                image = new Image(imageFile.toURI().toString());
+            } else {
+                // Belirli bir kitap resmi yoksa varsayılan resmi kullanıyoruz.
+                File defaultImageFile = new File("src/coverImages/default_image.jpg");
+                image = new Image(defaultImageFile.toURI().toString());
+            }
+
+            // ImageView'da resmi ayarlama.
+            controller.getCoverImageView().setImage(image);
+
+            stage.setScene(new Scene(root));
+            stage.setTitle(book.getTitle() + " Information Page");
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("An error occurred while trying to open book information window");
+        }
+    }
+
+
+
+
+
+
+
+
     @Override
     public void start(Stage stage) {
-        loadExistingBooks("books");
-        System.out.println(" ");
-        System.out.println(" ");
+        System.out.println(" "); System.out.println(" ");
         System.out.println("--------------------------------------------------------------------");
         System.out.println("             WELCOME TO BOOK CATALOG'S COMMAND LINE!");
         System.out.println("                    Logs will be shown here.");
         System.out.println("--------------------------------------------------------------------");
-        System.out.println(" ");
-        System.out.println(" ");
-        System.out.println("                           TEAM-5");
-        System.out.println(" ");
+        System.out.println(" "); System.out.println("                           TEAM-5"); System.out.println(" ");
+        System.out.println("--------------------------------------------------------------------");
+
+        loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.3] - Manage your book collection efficiently");
+        Label titleLabel = new Label("Book Catalog [v1.7]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -151,7 +250,7 @@ public class GUI extends Application {
 
 
 
-        // Combine title, help/about bar, and search controls in the top layout
+        //title, help/about bar, ve search controls için toplayout vboxunda birleştirme işlemi.
         VBox topLayout = new VBox(5, titleLabel, helpAboutBox, searchAndFiltersBox);
         topLayout.setAlignment(Pos.CENTER);
 
@@ -167,7 +266,7 @@ public class GUI extends Application {
 
 
 
-        // DELETE BUTTON
+        // DELETE BUTTON AND CSS DECLARATIONS
         String deleteButtonBaseStyle = "-fx-font-weight: bold; -fx-background-color: #dc3545; -fx-text-fill: white;";
         String deleteButtonHoverStyle = "-fx-background-color: #d9534f;"; // Mouse üzerine gelince
         String deleteButtonArmedStyle = "-fx-background-color: #c82333;"; // Basıldığında
@@ -193,9 +292,19 @@ public class GUI extends Application {
 
         //IMPORT & EXPORT JSON BUTTONS
         Button importButton = new Button("Import JSON");
-        importButton.setOnAction(e->{ /*Henüz işlev yok*/ });
+        importButton.setOnAction(e->{
+            /*Henüz işlev yok*/
+            System.out.println("Import JSON button is not included for Milestone-2");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Import JSON button is not included for Milestone-2");
+            alert.showAndWait();
+        });
         Button exportButton = new Button("Export JSON");
-        exportButton.setOnAction(e-> { /*Henüz işlev yok*/ });
+        exportButton.setOnAction(e-> {
+            /*Henüz işlev yok*/
+            System.out.println("Export JSON button is not included for Milestone-2");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Export JSON button is not included for Milestone-2");
+            alert.showAndWait();
+        });
 
 
 
@@ -216,10 +325,20 @@ public class GUI extends Application {
 
         //TABLE & COLUMNS
 
-        //TABLEVIEW WITH NO COLUMNS
+        bookTable.setRowFactory(tv -> {
+            TableRow<Book> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Book rowData = row.getItem();
+                    showBookDetails(rowData);
+                }
+            });
+            return row;
+        });
 
-        TableView<Book> bookTable = new TableView<>();
-        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries.")); //if no data
+
+        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+        //bu listviewda hiç kitap yoksa bu yazıyı gösteriyor.
         bookTable.setItems(GUI.filteredBooks);
         bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -266,43 +385,64 @@ public class GUI extends Application {
         tableContainer.setPadding(new Insets(15)); // 10 pixels padding on all sides
         VBox.setVgrow(bookTable, Priority.ALWAYS);
 
-        // Use this VBox as the center of the main layout
+
 
         BorderPane mainLayout = new BorderPane();
         mainLayout.setTop(topLayout);
         mainLayout.setCenter(tableContainer);
         mainLayout.setBottom(bottomLayout);
 
-        Scene mainScene = new Scene(mainLayout, 800, 600);
+        Scene mainScene = new Scene(mainLayout, 1200, 1000);
+        stage.setTitle("Book Catalog");
+        stage.setScene(mainScene);
+        stage.show();
 
 
 
         //HELP BUTTON ACTION
-        helpButton.setOnAction(e -> {/*Henüz işlev yok*/ });
+        helpButton.setOnAction(e -> {
+            /*Henüz işlev yok*/
+            System.out.println("Help button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Help button is not included for Milestone-2.");
+            alert.showAndWait();
+        });
 
 
 
         //ABOUT BUTTON ACTION
-        aboutButton.setOnAction(e -> { /*Henüz işlev yok*/});
+        aboutButton.setOnAction(e -> {
+            /*Henüz işlev yok*/
+            System.out.println("About button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
+            alert.showAndWait();
+        });
 
 
 
         //SEARCH BUTTON ACTION
-        searchButton.setOnAction(e->{ /*Henüz işlev yok*/});
+        searchButton.setOnAction(e->{/*Henüz işlev yok*/
+            System.out.println("Search button is not included for Milestone-.");
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Search button is not included for Milestone-2.");
+            alert.showAndWait();});
 
 
 
         //FILTERS BUTTON ACTION
-        filtersButton.setOnAction(e->{showFilterWindow(stage);});
+        filtersButton.setOnAction(e->{
+            System.out.println("Filters succesfully loaded.");
+            showFilterWindow(stage);
+        });
 
 
 
         //ADD BUTTON ACTION
 
         addButton.setOnAction(e -> {
+
             //  2. bir layout oluşturmak yerine var olanı layout arasında geçiş yapabilmek için Add butonu
             //  layoutu oluşturduktan sonra kullanılabilir hale geldi add butonun burda olmasının sebebi bu muhtemelen
             //  edit butonu da daha sonra buraya gelecek
+
             boolean isFullScreen = stage.isFullScreen();
             double width = stage.getWidth();
             double height = stage.getHeight();
@@ -322,27 +462,26 @@ public class GUI extends Application {
         addButton.setStyle("-fx-font-weight: bold; ");
 
 
-        stage.setTitle("Book Catalog");
-        stage.setScene(mainScene);
-        stage.show();
-
 
         // EDIT BUTTON ACTION
         editButton.setOnAction(e -> {
-            // Get all selected books
+
+
             List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
 
-            // Check if exactly one book is selected
+            //1 kitap seçiliyse if statementı:
             if (selectedBooks.size() == 1) {
-                Book selectedBook = selectedBooks.get(0); // Get the single selected book
+                Book selectedBook = selectedBooks.get(0); // Seçilen kitabı tutuyoruz.
+                bookTable.refresh(); // Kitabı düzenledikten sonra TableView'ı yeniliyoruz.
                 Transactions.showEditBookSection(stage, mainScene, selectedBook);
-                bookTable.refresh(); // Refresh the TableView after editing
             } else if (selectedBooks.isEmpty()) {
-                // No book selected
+                //kitap seçili olmama durumu:
+                System.out.println("No selection for edit is not valid");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a book from the table to edit.");
                 alert.showAndWait();
             } else {
-                // More than one book selected
+                //Multiple kitap seçilimi yapılırsa:
+                System.out.println("Multiple selection for edit is not valid");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Editing is only applicable to one selected book at a time.");
                 alert.showAndWait();
             }
@@ -356,28 +495,35 @@ public class GUI extends Application {
         deleteButton.setOnAction(e -> {
             List<Book> selectedBooks = new ArrayList<>(bookTable.getSelectionModel().getSelectedItems());
             if (!selectedBooks.isEmpty()) {
-                // Build a string with all selected book titles
+                //Stream, koleksiyondaki öğeler üzerinde ardışık işlemler yapmamızı sağlayan bir araçtır.
+                //bu sayede kitap verilerimizi daha hızlı ve kolay işliyoruz.
                 String bookListString = selectedBooks.stream()
                         .map(Book::getTitle)
                         .collect(Collectors.joining(", "));
 
-                // Create and show confirmation alert with book titles
+                //Yanlışlıkla delete tuşuna basmayı engellemek için:
                 Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
                 confirmationAlert.setTitle("Confirm Deletion");
+                System.out.println("Confirm Deletion?");
                 confirmationAlert.setHeaderText("Are you sure you want to delete the selected books?");
                 confirmationAlert.setContentText("You are about to delete the following books: " + bookListString);
 
-                // Customize the button labels if desired
+                //Uyarı ekranı için confirm ve iptal butonları:
                 ButtonType delete2Button = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
                 ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
                 confirmationAlert.getButtonTypes().setAll(delete2Button, cancelButton);
 
+
+                //Olası butona basma/basmama durumları için sonuçlar:
                 Optional<ButtonType> response = confirmationAlert.showAndWait();
                 if (response.isPresent() && response.get() == delete2Button) {
                     Transactions.deleteBooks(stage, mainScene, selectedBooks);
-                    bookTable.refresh();  // görünümü refreshler
+                    bookTable.refresh();
+                } else if (response.isPresent() && response.get() == cancelButton) {
+                    System.out.println("Deletion cancelled by user.");
                 }
             } else {
+                System.out.println("No selection has been made!");
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select at least one book to delete.");
                 alert.showAndWait();
             }

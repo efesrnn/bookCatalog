@@ -3,6 +3,7 @@ package com.example.bookcatalog;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -17,6 +18,8 @@ public class FilteringController {
     private Button clearButton;
     @FXML
     private VBox tagsContainer;
+    @FXML
+    private Label noTagsLabel;
     private Map<String, CheckBox> tagCheckboxes = new HashMap<>();
     private Stage stage;
 
@@ -53,19 +56,26 @@ public class FilteringController {
     }
 
     private void loadUniqueTags() {
+        System.out.println("Tags being added to a map to prevent duplicate tags.");
         Set<String> uniqueTags = new HashSet<>();
         for (Book book : GUI.booksData) {
             uniqueTags.addAll(book.getTags());
         }
 
         tagsContainer.getChildren().clear();
-        for (String tag : uniqueTags) {
-            CheckBox checkBox = new CheckBox(tag);
-            tagsContainer.getChildren().add(checkBox);
-            tagCheckboxes.put(tag, checkBox);
+        if (uniqueTags.isEmpty()) {
+            noTagsLabel.setVisible(true); // Eğer tag yoksa, uyarı labelını gösterme
+            //Burada bir sıkıntı var 1 tane labelsız checkbox gösteriyo düzelt.
+        } else {
+            noTagsLabel.setVisible(false); // Eğer tag varsa, uyarı mesajını gizle
+            for (String tag : uniqueTags) {
+                CheckBox checkBox = new CheckBox(tag);
+                tagsContainer.getChildren().add(checkBox);
+                tagCheckboxes.put(tag, checkBox);
+            }
         }
+        System.out.println("All tags have been shown.");
     }
-    // Restores the check states of the checkboxes based on previously saved selected tags
     private void restoreCheckedStates() {
         tagCheckboxes.forEach((tag, checkBox) -> {
             checkBox.setSelected(savedSelectedTags.contains(tag));
@@ -74,12 +84,14 @@ public class FilteringController {
 
     @FXML
     protected void applyFilters() {
+        System.out.println("Initıalizing String set to keep selected tags.");
         Set<String> selectedTags = tagCheckboxes.values().stream().filter(CheckBox::isSelected).map(CheckBox::getText).collect(Collectors.toSet());
 
         savedSelectedTags = new HashSet<>(selectedTags);
+        //Kullanıcı belirli tagleri girdikten sonra pencereyi kapatıp geri girdiğinde önceki seçili taglerin hala seçili kalması için kullandığımız kod.
 
         GUI.filteredBooks.setPredicate(book -> selectedTags.isEmpty() || book.getTags().stream().anyMatch(selectedTags::contains));
-// Optionally, close the stage here if you still want to close it manually by button
+        System.out.println("Selected tags applied.");
         if (stage != null) {
             stage.close();
         }
@@ -89,7 +101,7 @@ public class FilteringController {
     protected void clearFilters() {
         tagCheckboxes.values().forEach(cb -> cb.setSelected(false));
         GUI.filteredBooks.setPredicate(p -> true);
-        // Do not call applyFilters() here to avoid closing the window
         savedSelectedTags.clear();
+        System.out.println("All selected tags removed.");
     }
 }
