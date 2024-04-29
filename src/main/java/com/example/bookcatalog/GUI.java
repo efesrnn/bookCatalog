@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -37,9 +38,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 // Veri yönetimi için yardımcı importlar:
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -416,14 +419,52 @@ public class GUI extends Application {
             Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
             alert.showAndWait();
         });
-
-
-
         //SEARCH BUTTON ACTION
-        searchButton.setOnAction(e->{/*Henüz işlev yok*/
-            System.out.println("Search button is not included for Milestone-.");
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Search button is not included for Milestone-2.");
-            alert.showAndWait();});
+        searchButton.setOnAction(e->{
+            try {
+                String searchText = searchField.getText().toLowerCase();
+
+                filteredBooks.setPredicate(book -> {
+                    if (searchText.isEmpty()) {
+                        book.setSearchPriority(Integer.MAX_VALUE); // Reset priority
+                        return true;
+                    }
+
+                    if (book == null || book.getTitle() == null || book.getAuthors() == null || book.getIsbn() == null || book.getPublisher() == null) {
+                        return false;
+                    }
+
+                    boolean matchesTitle = book.getTitle().toLowerCase().contains(searchText);
+                    boolean matchesISBN = book.getIsbn().toLowerCase().contains(searchText);
+                    boolean matchesAuthor = book.getAuthors().stream().anyMatch(author -> author.toLowerCase().contains(searchText));
+                    boolean matchesPublisher = book.getPublisher().toLowerCase().contains(searchText);
+
+                    if (matchesTitle) {
+                        book.setSearchPriority(1); // Highest priority
+                    } else if (matchesISBN) {
+                        book.setSearchPriority(2);
+                    } else if (matchesAuthor) {
+                        book.setSearchPriority(3);
+                    } else if (matchesPublisher) {
+                        book.setSearchPriority(4);
+                    } else {
+                        book.setSearchPriority(Integer.MAX_VALUE); // No match
+                        return false;
+                    }
+                    return true;
+                });
+            }catch (Exception ex) {
+                    // Eğer bir hata meydana gelirse, kullanıcıya hata mesajı gösterilir.
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred during search: " + ex.getMessage());
+                    alert.showAndWait();
+                }
+            // Sıralı listeyi oluşturma
+            SortedList<Book> sortedBooks = new SortedList<>(filteredBooks);
+            sortedBooks.setComparator(Comparator.comparingInt(Book::getSearchPriority));
+            // TableView'ı güncelleme
+            bookTable.setItems(sortedBooks);
+            bookTable.refresh();
+        });
 
 
 
