@@ -21,6 +21,7 @@ public class Book {
     private String language;
     private double rating; //4.5 gibi noktalı bir değer olabileceği için int yerine double kullanıyoruz.
     private List<String> tags; //Birden fazla tag olabileceği için bir String List'i kullanıyoruz.
+    private int searchPriority = Integer.MAX_VALUE; // Yüksek bir başlangıç değeri
     //CONSTRUCTOR
     public Book(String coverImagePath, String title, String subtitle, List<String> authors, List<String> translators,
                 String isbn, String publisher, String date, String edition,
@@ -91,4 +92,6 @@ public class Book {
     public void setRating(double rating) { this.rating = rating; }
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
+    public int getSearchPriority() {return searchPriority;}
+    public void setSearchPriority(int searchPriority) {this.searchPriority = searchPriority;}
 }
