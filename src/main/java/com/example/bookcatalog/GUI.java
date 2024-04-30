@@ -169,6 +169,28 @@ public class GUI extends Application {
     }
 
 
+    // Mevcut kitap verilerini yüklerken rating değerlerini aralığın dışındaysa güncelleme:
+    public static void updateAllRatingsToValidRange() {
+        try {
+            Path booksPath = Paths.get("books");
+            Files.list(booksPath).forEach(path -> {
+                try {
+                    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+                    JSONObject bookJson = new JSONObject(content);
+                    double rating = bookJson.optDouble("rating", 0.0);
+                    if (rating < 0.0 || rating > 10.0) {
+                        bookJson.put("rating", 0.0);
+                        Files.write(path, bookJson.toString().getBytes(StandardCharsets.UTF_8));
+                        System.out.println("Updated invalid rating to 0.0 for ISBN: " + bookJson.getString("isbn"));
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error updating rating: " + e.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            System.err.println("Failed to access books directory: " + e.getMessage());
+        }
+    }
 
 
 
@@ -225,6 +247,7 @@ public class GUI extends Application {
         System.out.println(" "); System.out.println("                           TEAM-5"); System.out.println(" ");
         System.out.println("--------------------------------------------------------------------");
 
+        updateAllRatingsToValidRange();
         loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);

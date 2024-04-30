@@ -46,6 +46,23 @@ public class Transactions {
             return 0.0; //String type gelirse default 0.0 olarak double a çeviriyor.
         }
     }
+
+    // Rating girişi için doğrulama - kullanıcıdan alınan değerlerin 0 ile 10 arasında olduğunu doğrulamak
+    private static double parseAndValidateRating(String ratingStr) {
+        try {
+            double rating = Double.parseDouble(ratingStr);
+            if (rating < 0.0 || rating > 10.0) {
+                System.err.println("Rating must be between 0.0 and 10.0.");
+                return 0.0; // Geçersiz değerlerde 0.0 olarak dön.
+            }
+            return rating;
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid rating input. It must be a number between 0.0 and 10.0.");
+            return 0.0; // Hatalı girişlerde 0.0 olarak ayarla.
+        }
+    }
+
+
     private static void setPromptTexts(Map<String, TextField> fieldMap) {
         Map<String, String> prompts = new HashMap<>();
         prompts.put("Authors", "Multiple authors must be entered using a comma (,) as a delimiter.");
@@ -262,7 +279,8 @@ public class Transactions {
             else if(!ratingStr.matches("\\d*(\\.\\d+)?|^$")){
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Rating must be an integer, float, or empty.");
                 alert.showAndWait();
-            }else if (checkIsbnExists("books", isbn)) {
+            }
+            else if (checkIsbnExists("books", isbn)) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
                 alert.showAndWait();
             }
@@ -290,7 +308,7 @@ public class Transactions {
                     String edition = fieldMap.get("Edition").getText();
                     String cover = fieldMap.get("Cover").getText();
                     String language = fieldMap.get("Language").getText();
-                    double rating = safeParseDouble(ratingStr);
+                    double rating = parseAndValidateRating(ratingStr);
                     List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
 
 
@@ -604,6 +622,7 @@ public class Transactions {
             String isbn = fieldMap.get("ISBN").getText();
             String title = fieldMap.get("Title").getText();
             String ratingStr = fieldMap.get("Rating").getText();
+
 
             String oldIsbn = selectedBook.getIsbn(); // Mevcut ISBN
             String newIsbn = fieldMap.get("ISBN").getText().trim();
