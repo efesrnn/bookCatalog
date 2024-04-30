@@ -78,7 +78,7 @@ public class GUI extends Application {
             Parent root = loader.load();
 
             Stage filterStage = new Stage();
-            filterStage.setTitle("Filter Tags");
+            filterStage.setTitle("Filters");
             filterStage.initModality(Modality.WINDOW_MODAL);
             filterStage.initOwner(mainStage);
 

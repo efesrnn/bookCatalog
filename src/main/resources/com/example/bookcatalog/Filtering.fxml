@@ -17,6 +17,8 @@
             <VBox fx:id="tagsContainer" spacing="10">
                 <Label fx:id="noTagsLabel" text="There are no tags to display" visible="false"/>
             </VBox>
+            <!-- Rating filter ComboBox added here, without predefined items -->
+            <ComboBox fx:id="ratingComboBox" prefWidth="150"/>
         </VBox>
     </ScrollPane>
     <HBox spacing="5" alignment="CENTER">
@@ -24,4 +26,3 @@
         <Button fx:id="clearButton" text="Clear Filters" onMouseEntered="#onMouseEnteredClear" onMouseExited="#onMouseExitedClear" onAction="#clearFilters" minWidth="100" style="-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-size: 12pt;"/>
     </HBox>
 </VBox>
-
