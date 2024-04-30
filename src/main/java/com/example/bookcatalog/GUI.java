@@ -419,8 +419,7 @@ public class GUI extends Application {
             Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
             alert.showAndWait();
         });
-        //SEARCH BUTTON ACTION
-        searchButton.setOnAction(e->{
+        searchButton.setOnAction(e -> {
             try {
                 String searchText = searchField.getText().toLowerCase();
 
@@ -430,34 +429,65 @@ public class GUI extends Application {
                         return true;
                     }
 
-                    if (book == null || book.getTitle() == null || book.getAuthors() == null || book.getIsbn() == null || book.getPublisher() == null) {
+                    if (book == null) {
                         return false;
                     }
 
-                    boolean matchesTitle = book.getTitle().toLowerCase().contains(searchText);
-                    boolean matchesISBN = book.getIsbn().toLowerCase().contains(searchText);
-                    boolean matchesAuthor = book.getAuthors().stream().anyMatch(author -> author.toLowerCase().contains(searchText));
-                    boolean matchesPublisher = book.getPublisher().toLowerCase().contains(searchText);
+                    boolean matchesTitle = book.getTitle() != null && book.getTitle().toLowerCase().contains(searchText);
+                    boolean matchesSubtitle = book.getSubtitle() != null && book.getSubtitle().toLowerCase().contains(searchText);
+                    boolean matchesISBN = book.getIsbn() != null && book.getIsbn().toLowerCase().contains(searchText);
+                    boolean matchesPublisher = book.getPublisher() != null && book.getPublisher().toLowerCase().contains(searchText);
+                    boolean matchesAuthors = book.getAuthors() != null && book.getAuthors().stream().anyMatch(author -> author.toLowerCase().contains(searchText));
+                    boolean matchesTranslators = book.getTranslators() != null && book.getTranslators().stream().anyMatch(translator -> translator.toLowerCase().contains(searchText));
+                    boolean matchesRating = String.valueOf(book.getRating()).contains(searchText);
+                    boolean matchesDate = book.getDate() != null && book.getDate().toLowerCase().contains(searchText);
+                    boolean matchesLanguage = book.getLanguage() != null && book.getLanguage().toLowerCase().contains(searchText);
+                    boolean matchesCover = book.getCover() != null && book.getCover().toLowerCase().contains(searchText);
+                    boolean matchesEdition = book.getEdition() != null && book.getEdition().toLowerCase().contains(searchText);
+                    boolean matchesTags = book.getTags() != null && book.getTags().stream().anyMatch(tag -> tag.toLowerCase().contains(searchText));
 
+                    //Tablomuzda soldan sağa doğru olan sıralamayı öncelikte de aynı şekilde kullandık.
                     if (matchesTitle) {
-                        book.setSearchPriority(1); // Highest priority
-                    } else if (matchesISBN) {
+                        book.setSearchPriority(1); //Highest Priority
+                    } else if (matchesSubtitle) {
                         book.setSearchPriority(2);
-                    } else if (matchesAuthor) {
+                    } else if (matchesAuthors) {
                         book.setSearchPriority(3);
+                    }
+                    else if (matchesTranslators) {
+                        book.setSearchPriority(4); }
+                        else if (matchesISBN) {
+                        book.setSearchPriority(5);
                     } else if (matchesPublisher) {
-                        book.setSearchPriority(4);
-                    } else {
+                        book.setSearchPriority(6);
+                    }
+                    else if (matchesDate) {
+                        book.setSearchPriority(7);
+                    }
+                else if (matchesEdition) {
+                        book.setSearchPriority(8);
+                    }  else if (matchesCover) {
+                        book.setSearchPriority(9);
+                    }
+                    else if (matchesLanguage) {
+                        book.setSearchPriority(10);
+                    }
+                    else if (matchesRating) {
+                        book.setSearchPriority(11);
+                    }
+                    else if (matchesTags) {
+                        book.setSearchPriority(12);
+                    }else {
                         book.setSearchPriority(Integer.MAX_VALUE); // No match
                         return false;
                     }
+
                     return true;
                 });
-            }catch (Exception ex) {
-                    // Eğer bir hata meydana gelirse, kullanıcıya hata mesajı gösterilir.
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred during search: " + ex.getMessage());
-                    alert.showAndWait();
-                }
+            } catch (Exception ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred during search: " + ex.getMessage());
+                alert.showAndWait();
+            }
             // Sıralı listeyi oluşturma
             SortedList<Book> sortedBooks = new SortedList<>(filteredBooks);
             sortedBooks.setComparator(Comparator.comparingInt(Book::getSearchPriority));
@@ -465,7 +495,6 @@ public class GUI extends Application {
             bookTable.setItems(sortedBooks);
             bookTable.refresh();
         });
-
 
 
         //FILTERS BUTTON ACTION
