@@ -403,11 +403,109 @@ public class GUI extends Application {
 
 
         //HELP BUTTON ACTION
+
         helpButton.setOnAction(e -> {
-            /*Henüz işlev yok*/
-            System.out.println("Help button is not included for Milestone-.");
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Help button is not included for Milestone-2.");
-            alert.showAndWait();
+            class IndexContainer {
+                int index;
+            }
+            final IndexContainer currentPageIndex = new IndexContainer();
+            String[] helpPages = {
+                    "  Need help? Don't worry!" +
+                            "\n  Here are some tips on how to use the program." +
+                            "\n" +
+                            "\n  To add a new book to your library, click the \"Add\" button." +
+                            "\n  To edit a book, click the \"Edit\" button." +
+                            "\n  To delete a book, click the \"Delete\" button." +
+                            "\n  To import a book, click the \"Import JSON\" button." +
+                            "\n  To export a book, click the \"Export JSON\" button." +
+                            "\n" +
+                            "\n  You can see the next page for more help.",
+                    " You can search a book by entering information (title, ISBN etc.) in the blank after the \"Search a book:\" writing. And then all you need to do is clicking the \"Search\" button!" +
+                            "\n" +
+                            "\n  To see the filters you can use, click the \"Filters\" button. You can select the filters you want to use, and then click the \"Apply Filters\" button. To clear the filters, just click the \"Clear Filters\" button."
+            };
+            Stage helpStage = new Stage();
+            helpStage.setTitle("Help");
+
+            // Help content
+            Label helpLabel = new Label(helpPages[currentPageIndex.index]);
+
+            // Navigation buttons
+            Button previousButton = new Button("Previous");
+
+
+            helpStage.setTitle("Help");
+
+            // Help content
+
+
+            // Navigation buttons
+
+            previousButton.setOnAction(event -> {
+                if (currentPageIndex.index > 0) {
+                    currentPageIndex.index--;
+                    helpLabel.setText(helpPages[currentPageIndex.index]);
+                }
+            });
+
+            Button nextButton = new Button("Next");
+            nextButton.setOnAction(event -> {
+                if (currentPageIndex.index < helpPages.length - 1) {
+                    currentPageIndex.index++;
+                    helpLabel.setText(helpPages[currentPageIndex.index]);
+                }
+            });
+
+            // Layout for navigation buttons
+            HBox buttonBox = new HBox(10);
+            buttonBox.getChildren().addAll(previousButton, nextButton);
+
+            helpLabel.setText(helpPages[currentPageIndex.index]);
+            helpLabel.setWrapText(true); // Metnin otomatik olarak bir sonraki satıra geçmesini sağlar
+
+
+
+            // Layout for the help window
+            VBox helpLayout = new VBox(10);
+            helpLayout.getChildren().addAll(helpLabel, buttonBox);
+            helpLayout.setPadding(new Insets(10));
+
+            // Add listener to adjust label size when scene size changes
+            helpLayout.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+                helpLabel.setPrefWidth(newWidth.doubleValue() - 20); // 20 piksel kenar boşluğu için
+            });
+
+            helpLayout.heightProperty().addListener((obs, oldHeight, newHeight) -> {
+                helpLabel.setPrefHeight(newHeight.doubleValue() - 20); // 20 piksel kenar boşluğu için
+            });
+
+
+
+
+            Scene helpScene = new Scene(helpLayout, 350, 250);
+            helpStage.setScene(helpScene);
+
+
+            // Position the help window at the top right corner of the primary stage
+            double primaryX = stage.getX();
+            double primaryY = stage.getY();
+            double primaryWidth = stage.getWidth();
+            double primaryHeight = stage.getHeight();
+            double helpWidth = helpScene.getWidth();
+            double helpHeight = helpScene.getHeight();
+
+            double helpX = primaryX + primaryWidth - helpWidth;
+            double helpY = primaryY;
+
+            helpStage.setX(helpX);
+            helpStage.setY(helpY);
+
+            helpStage.show();
+
+
+            Scene scene = new Scene(helpButton, 300, 250);
+            stage.setScene(scene);
+            stage.show();
         });
 
 
