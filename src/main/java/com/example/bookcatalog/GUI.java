@@ -50,6 +50,8 @@ import java.util.stream.Stream;
 // Uyarı ve hata mesajlarını yönetme:
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.example.bookcatalog.FilteringController.isFiltered;
 /* CSS Edit Kısmında düzgün bir şekilde çalışmasına rağmen her save veya back butonuna
 basıldığında sürekli uyarı mesajı alıyorduk aşağıdaki import bu uyarı mesajını göstermemek için.*/
 
@@ -251,7 +253,7 @@ public class GUI extends Application {
         loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.7]");
+        Label titleLabel = new Label("Book Catalog [v1.8]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -268,8 +270,10 @@ public class GUI extends Application {
         TextField searchField = new TextField();
         searchField.setPromptText("Enter book title, author, or ISBN"); //Tıklayınca kaybolan yazı.
         Button searchButton = new Button("Search");
+        Button clearButton = new Button("Clear");
+        clearButton.setVisible(false);
         Button filtersButton = new Button("Filters");
-        HBox searchAndFiltersBox = new HBox(10, searchLabel, searchField, searchButton, filtersButton);
+        HBox searchAndFiltersBox = new HBox(10, searchLabel, searchField, searchButton,clearButton, filtersButton);
         searchAndFiltersBox.setAlignment(Pos.CENTER);
         searchAndFiltersBox.setPadding(new Insets(15, 20, 15, 20));
         searchField.setMaxWidth(400);
@@ -363,8 +367,10 @@ public class GUI extends Application {
         });
 
 
-        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
-        //bu listviewda hiç kitap yoksa bu yazıyı gösteriyor.
+
+            bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+            //bu listviewda hiç kitap yoksa bu yazıyı gösteriyor.
+
         bookTable.setItems(GUI.filteredBooks);
         bookTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -540,6 +546,9 @@ public class GUI extends Application {
             Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
             alert.showAndWait();
         });
+
+
+
         searchButton.setOnAction(e -> {
             try {
                 String searchText = searchField.getText().toLowerCase();
@@ -600,21 +609,38 @@ public class GUI extends Application {
                         book.setSearchPriority(12);
                     }else {
                         book.setSearchPriority(Integer.MAX_VALUE); // No match
+                        clearButton.setVisible(true);
                         return false;
                     }
-
+                    clearButton.setVisible(true);
                     return true;
                 });
             } catch (Exception ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "An error occurred during search: " + ex.getMessage());
                 alert.showAndWait();
+                isFiltered=false;
             }
             // Sıralı listeyi oluşturma
             SortedList<Book> sortedBooks = new SortedList<>(filteredBooks);
             sortedBooks.setComparator(Comparator.comparingInt(Book::getSearchPriority));
             // TableView'ı güncelleme
+            isFiltered=true;
+            if(isFiltered==true){
+                bookTable.setPlaceholder(new Label("No books to display for the entered key words." +
+                        " Search works up to 12 characters."));
+            }else{
+                bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+            }
             bookTable.setItems(sortedBooks);
             bookTable.refresh();
+        });
+
+
+        clearButton.setOnAction(e -> {
+            searchField.setText("");  // Clear the search field
+            bookTable.setItems(booksData);  // Reset to original book list or an appropriate list
+            bookTable.refresh();
+            clearButton.setVisible(false);  // Hide the clear button after clearing
         });
 
 

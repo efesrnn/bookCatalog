@@ -67,11 +67,11 @@ public class TableviewBookDataController {
         tagsLabel.setText(String.join(", ", book.getTags()));
 
         if (book.getCoverImagePath() != null && !book.getCoverImagePath().isEmpty()) {
-            // Dosya yolunu doğru şekilde ayarlayın
+            // Dosya yolunu doğru şekilde ayarlama
             Image image = new Image(Paths.get(book.getCoverImagePath()).toUri().toString());
             coverImageView.setImage(image);
         } else {
-            // Varsayılan bir resim veya boş bir görüntü ayarlayabilirsiniz
+            // Varsayılan bir görüntü ayarlama
             coverImageView.setImage(new Image("file:src/coverImages/default_image.jpg"));
         }
 

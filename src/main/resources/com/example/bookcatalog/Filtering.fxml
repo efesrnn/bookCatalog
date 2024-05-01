@@ -3,6 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.*?>
 
+
 <VBox fx:id="root"
       alignment="TOP_CENTER"
       spacing="20"
@@ -12,15 +13,23 @@
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
-    <ScrollPane fitToWidth="true" prefHeight="400" VBox.vgrow="ALWAYS">
-        <VBox spacing="10">
-            <VBox fx:id="tagsContainer" spacing="10">
-                <Label fx:id="noTagsLabel" text="There are no tags to display" visible="false"/>
-            </VBox>
-            <!-- Rating filter ComboBox added here, without predefined items -->
-            <ComboBox fx:id="ratingComboBox" prefWidth="150"/>
-        </VBox>
-    </ScrollPane>
+    <Accordion fx:id="accordion" VBox.vgrow="ALWAYS">
+        <panes>
+            <TitledPane text="Tags" expanded="false">
+                <VBox fx:id="tagsContainer" spacing="10">
+                    <Label fx:id="noTagsLabel" text="There are no tags to display" visible="false"/>
+                </VBox>
+            </TitledPane>
+            <TitledPane text="Rating" expanded="false">
+                <VBox fx:id="ratingsContainer" spacing="10">
+                    <CheckBox fx:id="ratingAbove75" text="Above 7.5"/>
+                    <CheckBox fx:id="rating5to75" text="5.0 - 7.5"/>
+                    <CheckBox fx:id="rating25to5" text="2.5 - 5.0"/>
+                    <CheckBox fx:id="ratingBelow25" text="Below 2.5"/>
+                </VBox>
+            </TitledPane>
+        </panes>
+    </Accordion>
     <HBox spacing="5" alignment="CENTER">
         <Button fx:id="applyButton" text="Apply Filters" onMouseEntered="#onMouseEnteredApply" onMouseExited="#onMouseExitedApply" onAction="#applyFilters" minWidth="100" style="-fx-font-weight: bold; -fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-size: 12pt;"/>
         <Button fx:id="clearButton" text="Clear Filters" onMouseEntered="#onMouseEnteredClear" onMouseExited="#onMouseExitedClear" onAction="#clearFilters" minWidth="100" style="-fx-font-weight: bold; -fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-size: 12pt;"/>

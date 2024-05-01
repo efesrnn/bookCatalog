@@ -38,29 +38,33 @@ public class Transactions {
     private static String coverImagePath = null;
 
 
-    private static double safeParseDouble(String str) {
+
+
+    private static Double validateRating(String ratingStr) {
         try {
-            return Double.parseDouble(str);
+            if(ratingStr.isEmpty()) return 0.0;
+            double rating = Double.parseDouble(ratingStr);
+            if (rating < 0.0 || rating > 10.0) {
+                // Uyarı mesajı göster
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Invalid Rating");
+                alert.setHeaderText(null);
+                alert.setContentText("Rating must be a number between 0 and 10.");
+                alert.showAndWait();
+                return null; // Geçersiz değerler için null döner, bu da değerin güncellenmeyeceğini belirtir.
+            }
+            return rating; // Geçerli bir değerse, bu değeri döndür.
         } catch (NumberFormatException e) {
-            System.out.println("String type detected. Successfully converted to default double value.");
-            return 0.0; //String type gelirse default 0.0 olarak double a çeviriyor.
+            // Sayısal olmayan bir giriş yapıldığında uyarı göster
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Invalid Rating");
+            alert.setHeaderText(null);
+            alert.setContentText("Please enter a valid number for rating.");
+            alert.showAndWait();
+            return null; // Hatalı girişlerde null olarak ayarla.
         }
     }
 
-    // Rating girişi için doğrulama - kullanıcıdan alınan değerlerin 0 ile 10 arasında olduğunu doğrulamak
-    private static double parseAndValidateRating(String ratingStr) {
-        try {
-            double rating = Double.parseDouble(ratingStr);
-            if (rating < 0.0 || rating > 10.0) {
-                System.err.println("Rating must be between 0.0 and 10.0.");
-                return 0.0; // Geçersiz değerlerde 0.0 olarak dön.
-            }
-            return rating;
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid rating input. It must be a number between 0.0 and 10.0.");
-            return 0.0; // Hatalı girişlerde 0.0 olarak ayarla.
-        }
-    }
 
 
     private static void setPromptTexts(Map<String, TextField> fieldMap) {
@@ -235,6 +239,10 @@ public class Transactions {
             String isbn = fieldMap.get("ISBN").getText().trim();
             String ratingStr = fieldMap.get("Rating").getText();
             String title = fieldMap.get("Title").getText();
+            Double rating = validateRating(ratingStr);
+            if (rating == null) {
+                return; //alertten sonra menüye geri dönme
+            }
 
 
             if (!isbn.matches("\\d{10,13}")) {
@@ -308,7 +316,6 @@ public class Transactions {
                     String edition = fieldMap.get("Edition").getText();
                     String cover = fieldMap.get("Cover").getText();
                     String language = fieldMap.get("Language").getText();
-                    double rating = parseAndValidateRating(ratingStr);
                     List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
 
 
@@ -500,7 +507,7 @@ public class Transactions {
 
         removeImageButton.setOnAction(e -> {
             try {
-                // Varsayılan resmin path'ini tanımlamak
+                // Varsayılan resmin path'ini tanımlama
                 File defaultImageFile = new File("src/coverImages/default_image.jpg");
                 if (defaultImageFile.exists()) {
                     imageView.setImage(new Image(defaultImageFile.toURI().toString()));
@@ -622,7 +629,10 @@ public class Transactions {
             String isbn = fieldMap.get("ISBN").getText();
             String title = fieldMap.get("Title").getText();
             String ratingStr = fieldMap.get("Rating").getText();
-
+            Double rating = validateRating(ratingStr);
+            if (rating == null) {
+                return;
+            }
 
             String oldIsbn = selectedBook.getIsbn(); // Mevcut ISBN
             String newIsbn = fieldMap.get("ISBN").getText().trim();
@@ -645,7 +655,7 @@ public class Transactions {
                 return;
             }
 
-            double rating = ratingStr.isEmpty() ? 0.0 : Double.parseDouble(ratingStr);
+
 
             Map<String, Object> userInput = new HashMap<>();
             userInput.put("title", title);

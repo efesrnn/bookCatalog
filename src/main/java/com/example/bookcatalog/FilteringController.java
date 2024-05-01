@@ -1,10 +1,7 @@
 package com.example.bookcatalog;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -12,18 +9,22 @@ import javafx.stage.Stage;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.example.bookcatalog.GUI.bookTable;
+
 public class FilteringController {
     @FXML
     private Button applyButton;
     @FXML
     private Button clearButton;
-    @FXML
-    private VBox tagsContainer;
+
     @FXML
     private Label noTagsLabel;
     @FXML
-    private ComboBox<String> ratingComboBox;  // The ComboBox for rating filters
+    private CheckBox ratingAbove75, rating5to75, rating25to5, ratingBelow25, ratingAny;
+    @FXML
+    private Accordion accordion;
 
+    public static boolean isFiltered = false;
     private Map<String, CheckBox> tagCheckboxes = new HashMap<>();
     private Stage stage;
     private static Set<String> savedSelectedTags = new HashSet<>();
@@ -55,15 +56,19 @@ public class FilteringController {
 
     @FXML
     public void initialize() {
-        loadUniqueTags();
-        restoreCheckedStates();
-        initializeRatingComboBox();  // Initialize ComboBox items
+        System.out.println("Initializing...");
+            loadUniqueTags();
+            restoreCheckedStates();
+            initializeAccordion();
+            System.out.println("Initialization completed successfully.");
     }
-    private void initializeRatingComboBox() {
-        ratingComboBox.getItems().add("Filter by Rating");
-        ratingComboBox.getItems().addAll("Above 7.5", "5.0 - 7.5", "2.5 - 5.0", "Below 2.5", "Any");
-        ratingComboBox.setValue("Filter by Rating"); // Default selection
+    private void initializeAccordion() {
+
+       accordion.setExpandedPane(accordion.getPanes().get(0));
     }
+
+
+
 
     private void loadUniqueTags() {
         Set<String> uniqueTags = new HashSet<>();
@@ -71,68 +76,94 @@ public class FilteringController {
             uniqueTags.addAll(book.getTags());
         }
 
-        tagsContainer.getChildren().clear();
+        VBox tagsBox = (VBox) accordion.getPanes().get(0).getContent();
+        tagsBox.getChildren().clear();
         noTagsLabel.setVisible(uniqueTags.isEmpty());
+        tagsBox.getChildren().add(noTagsLabel);
         for (String tag : uniqueTags) {
             CheckBox checkBox = new CheckBox(tag);
-            tagsContainer.getChildren().add(checkBox);
+            tagsBox.getChildren().add(checkBox);
             tagCheckboxes.put(tag, checkBox);
         }
     }
 
     private void restoreCheckedStates() {
         tagCheckboxes.forEach((tag, checkBox) -> checkBox.setSelected(savedSelectedTags.contains(tag)));
-        ratingComboBox.setValue(savedSelectedRating); // Restore the selected rating
+
     }
 
     @FXML
     protected void applyFilters() {
+        isFiltered=true;
+        if(isFiltered==true){
+            bookTable.setPlaceholder(new Label("No books to display from selected filters"));
+        }else{
+            bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+        }
         Set<String> selectedTags = tagCheckboxes.values().stream()
                 .filter(CheckBox::isSelected)
                 .map(CheckBox::getText)
                 .collect(Collectors.toSet());
-        String selectedRating = ratingComboBox.getValue();
 
-        savedSelectedTags = new HashSet<>(selectedTags);
-        savedSelectedRating = selectedRating; // Save the selected rating
+        // 'Any' is always implied, no need to add explicitly
+        Set<String> selectedRatings = new HashSet<>();
+        if (ratingAbove75.isSelected()) selectedRatings.add("Above 7.5");
+        if (rating5to75.isSelected()) selectedRatings.add("5.0 - 7.5");
+        if (rating25to5.isSelected()) selectedRatings.add("2.5 - 5.0");
+        if (ratingBelow25.isSelected()) selectedRatings.add("Below 2.5");
 
-        GUI.filteredBooks.setPredicate(book -> matchTags(book.getTags(), selectedTags) && matchRating(book.getRating(), selectedRating));
+        bookTable.refresh();
+
+        GUI.filteredBooks.setPredicate(book ->
+                matchTags(book.getTags(), selectedTags) && matchRating(book.getRating(), selectedRatings)
+        );
         if (stage != null) {
             stage.close();
         }
     }
+
 
     private boolean matchTags(List<String> bookTags, Set<String> selectedTags) {
         return selectedTags.isEmpty() || bookTags.stream().anyMatch(selectedTags::contains);
     }
 
-    private boolean matchRating(double rating, String ratingFilter) {
-        switch (ratingFilter) {
-            case "Above 7.5":
-                return rating > 7.5;
-            case "5.0 - 7.5":
-                return rating >= 5.0 && rating <= 7.5;
-            case "2.5 - 5.0":
-                return rating >= 2.5 && rating <= 5.0;
-            case "Below 2.5":
-                return rating < 2.5;
-            case "Any":
-            default:
-                return true;
-        }
+    private boolean matchRating(double rating, Set<String> ratingFilters) {
+        // Modify to handle sets
+        return ratingFilters.contains("Any") || ratingFilters.stream().anyMatch(filter -> {
+            switch (filter) {
+                case "Above 7.5": return rating > 7.5;
+                case "5.0 - 7.5": return rating >= 5.0 && rating <= 7.5;
+                case "2.5 - 5.0": return rating >= 2.5 && rating <= 5.0;
+                case "Below 2.5": return rating < 2.5;
+                default: return true;
+            }
+        });
     }
+
+
 
     @FXML
     protected void clearFilters() {
+        isFiltered=false;
+        if(isFiltered==true){
+            bookTable.setPlaceholder(new Label("No books to display from selected filters"));
+        }else{
+            bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
+        }
         tagCheckboxes.values().forEach(cb -> cb.setSelected(false));
         savedSelectedTags.clear(); // Clear the saved tag selections
-        ratingComboBox.setValue("Filter by Rating");
-        savedSelectedRating = "Any"; // Reset the saved rating filter
+        ratingAbove75.setSelected(false);
+        rating5to75.setSelected(false);
+        rating25to5.setSelected(false);
+        ratingBelow25.setSelected(false);
+
+        bookTable.refresh();
+
         GUI.filteredBooks.setPredicate(p -> true);
 
-        // Optionally, close the filter window if you have a separate stage for filters
         if (stage != null) {
             stage.close();
         }
     }
+
 }
