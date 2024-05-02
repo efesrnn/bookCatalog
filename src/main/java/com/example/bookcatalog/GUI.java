@@ -638,7 +638,10 @@ public class GUI extends Application {
 
         clearButton.setOnAction(e -> {
             searchField.setText("");  // Clear the search field
+            /*
             bookTable.setItems(booksData);  // Reset to original book list or an appropriate list
+             */
+            filteredBooks.setPredicate(book -> { book.setSearchPriority(Integer.MAX_VALUE); return true;});
             bookTable.refresh();
             clearButton.setVisible(false);  // Hide the clear button after clearing
         });
