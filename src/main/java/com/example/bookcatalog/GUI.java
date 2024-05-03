@@ -28,23 +28,21 @@ import javafx.scene.Parent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 
 // JSON işleme importları:
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 // Veri yönetimi için yardımcı importlar:
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 import java.util.stream.Stream;
 
 // Uyarı ve hata mesajlarını yönetme:
@@ -97,49 +95,230 @@ public class GUI extends Application {
 
 
 
-    public void loadExistingBooks(String directoryPath) {
+
+    private void loadExistingBooks(String directoryPath) {
         try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
-                    .forEach(path -> {
-                        try {
-                            String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-                            JSONObject json = new JSONObject(content);
-
-                            boolean needsUpdate = false;
-
-                            // Rating double çevrim kontrolü
-                            if (json.has("rating")) {
-                                try {
-                                    json.getDouble("rating"); // Eğer bu başarısız olursa JSONException fırlatır
-                                } catch (JSONException ex) {
-                                    try {
-                                        double rating = Double.parseDouble(json.getString("rating"));
-                                        json.put("rating", rating);
-                                    } catch (NumberFormatException e) {
-                                        json.put("rating", 0.0);
-                                        needsUpdate = true;
-                                        System.out.println("Failed to parse 'rating' as a double. Defaulting to 0.0 at: " + path);
-                                    }
-                                }
-                            }
-
-                            // JSON dosyası güncellenirse
-                            if (needsUpdate) {
-                                Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
-                                System.out.println("Updated JSON file at: " + path);
-                            }
-
-                            Book book = Book.fromJSON(json);
-                            booksData.add(book);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                    .forEach(this::processFile);
         } catch (IOException e) {
+            System.out.println("Directory for books does not exists. Add a book using 'Book Catalog'to create directory");
+        }
+    }
+
+    private void processFile(Path path) {
+        if (Files.exists(path)) {
+            try {
+                String content = new String(Files.readAllBytes(path));
+                JSONTokener tokener = new JSONTokener(content);
+                Object json = tokener.nextValue();
+                if (json instanceof JSONObject) {
+                    processBookJson((JSONObject) json, path);
+                } else if (json instanceof JSONArray) {
+                    System.out.println("Found JSON Array at: " + path);
+                    System.out.println("Default save process can only handle JSON Objects.");
+                    System.out.println("Converting all book data at JSON Array into separate JSON Objects...");
+                    splitJsonArrayIntoFiles(path);
+                } else {
+                    System.out.println("Unexpected JSON format at: " + path);
+                }
+            } catch (IOException e) {
+                System.out.println("Error reading file: " + path);
+            }
+        } else {
+            System.out.println("File does not exist: " + path);
+        }
+    }
+
+    private void splitJsonArrayIntoFiles(Path jsonArrayPath) {
+        String uniqueTempFileName = "temp_" + UUID.randomUUID().toString() + ".json";
+        Path tempPath = jsonArrayPath.resolveSibling(uniqueTempFileName);
+
+        try {
+            Files.move(jsonArrayPath, tempPath, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Renamed original JSON file to temporary file: " + tempPath);
+
+            JSONArray jsonArray = new JSONArray(Files.readString(tempPath));
+            Path directoryPath = Paths.get("books");
+            Files.createDirectories(directoryPath);
+
+            jsonArray.forEach(item -> {
+                JSONObject jsonObject = (JSONObject) item;
+                String isbn = jsonObject.optString("isbn", "unknown");
+                Path newFilePath = directoryPath.resolve(isbn + ".json");
+                try {
+                    if (!Files.exists(newFilePath)) {
+                        Files.writeString(newFilePath, jsonObject.toString());
+                        System.out.println("Created new JSON file for ISBN: " + isbn + " at: " + newFilePath);
+                    } else {
+                        System.out.println("File already exists for ISBN: " + isbn);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Failed to write JSON file for ISBN: " + isbn);
+                }
+            });
+
+            Files.deleteIfExists(tempPath);
+            System.out.println("Deleted JSON Array file: " + tempPath);
+            System.out.println("Conversion process successfully!");
+
+            //Oluşturulan yeni json objeleri table a eklemek için table ı sıfırlayıp tekrar loadlıyoz.
+            Platform.runLater(() -> {
+                booksData.clear();
+                loadExistingBooks("books");
+                System.out.println("Reloading books after separating JSON Array...");
+            });
+        } catch (IOException e) {
+            System.out.println("Error processing JSON array file: " + jsonArrayPath);
+            e.printStackTrace();
+        }
+
+    }
+
+
+    private void copyDefaultImage(String isbn) {
+        Path sourceImagePath = Paths.get("src/coverImages/default_image.jpg");
+        Path destinationImagePath = Paths.get("src/coverImages/" + isbn + ".jpg");
+
+        try {
+            // Check if the destination file already exists before copying
+            if (!Files.exists(destinationImagePath)) {
+                Files.copy(sourceImagePath, destinationImagePath, StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("Cover image file does not exists for the file: "+isbn+".json.\n"+"Default image has assigned for ISBN: " + isbn);
+            }
+
+        } catch (IOException e) {
+            System.err.println("Failed to copy image for ISBN: " + isbn);
             e.printStackTrace();
         }
     }
+
+
+
+
+
+    private void processBookJson(JSONObject json, Path path) throws IOException {
+
+        boolean needsUpdate = false;
+        String content = Files.readString(path);
+        JSONObject jsonObject = new JSONObject(content);
+        String isbn = jsonObject.optString("isbn", "unknown");
+        copyDefaultImage(isbn);
+
+        // Anahtarlar listesi ve varsayılan değerler
+        if (!json.has("title")) {
+            System.out.println("Couldn't find the 'title' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("title", "");
+            needsUpdate = true;
+        }
+        if (!json.has("subtitle")) {
+            System.out.println("Couldn't find the 'subtitle' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("subtitle", "");
+            needsUpdate = true;
+        }
+        if (!json.has("authors") || !(json.opt("authors") instanceof JSONArray)) {
+            json.put("authors", new JSONArray());
+                System.out.println("Couldn't find any 'authors' key or it might not be a JSON Array at: "+path);
+                System.out.println("Creating as blank... ");
+            needsUpdate = true;
+        }
+        if (!json.has("translators") || !(json.opt("translators") instanceof JSONArray)) {
+            json.put("translators", new JSONArray());
+                System.out.println("Couldn't find any 'translators' key or it might not be a JSON Array at: "+path);
+                System.out.println("Creating as blank... ");
+            needsUpdate = true;
+        }
+        if (!json.has("isbn")) {
+            System.out.println("Couldn't find the 'isbn' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("isbn", "");
+            needsUpdate = true;
+        }
+        if (!json.has("publisher")) {
+            System.out.println("Couldn't find the 'publisher' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("publisher", "");
+            needsUpdate = true;
+        }
+        if (!json.has("date")) {
+            System.out.println("Couldn't find the 'date' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("date", "");
+            needsUpdate = true;
+        }
+        if (!json.has("edition")) {
+            System.out.println("Couldn't find the 'edition' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("edition", "");
+            needsUpdate = true;
+        }
+        if (!json.has("cover")) {
+            System.out.println("Couldn't find the 'cover' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("cover", "");
+            needsUpdate = true;
+        }
+        if (!json.has("language")) {
+            System.out.println("Couldn't find the 'language' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("language", "");
+            needsUpdate = true;
+        }
+        if (!json.has("tags") || !(json.opt("tags") instanceof JSONArray)) {
+            json.put("tags", new JSONArray());
+                System.out.println("Couldn't find any 'tags' key or it might not be a JSON Array at: "+path);
+                System.out.println("Creating as blank... ");
+            needsUpdate = true;
+        }
+        if(!json.has("rating")){
+            System.out.println("Couldn't find the 'rating' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("rating","");
+            needsUpdate=true;
+        }
+
+        // Rating çevrim kontrolü ve varsayılan değer atama
+        if (json.has("rating")) {
+            try {
+                json.getDouble("rating"); // Eğer bu başarısız olursa JSONException fırlatır
+            } catch (JSONException ex) {
+                try {
+                    double rating = Double.parseDouble(json.optString("rating", "0.0"));
+                    json.put("rating", rating);
+                } catch (NumberFormatException e) {
+                    json.put("rating", 0.0);
+                    needsUpdate = true;
+                }
+            }
+        } else {
+            json.put("rating", 0.0);
+            needsUpdate = true;
+        }
+
+        // Eğer JSON dosyası güncellenirse, dosyayı yeniden yaz
+        if (needsUpdate) {
+            try {
+                Files.writeString(path, json.toString(), StandardOpenOption.TRUNCATE_EXISTING);
+                System.out.println("Updated JSON file due to missing fields at: " + path);
+            } catch (IOException e) {
+                System.out.println("Error writing JSON file: " + path);
+                e.printStackTrace();
+            }
+        }
+
+        // Kitap nesnesi oluştur ve listeye ekle
+        try {
+            Book book = Book.fromJSON(json);
+            booksData.add(book);
+        } catch (Exception e) {
+            System.out.println("Error creating book from JSON object: " + path);
+            e.printStackTrace();
+        }
+    }
+
+
 
 
 
@@ -178,12 +357,19 @@ public class GUI extends Application {
             Files.list(booksPath).forEach(path -> {
                 try {
                     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-                    JSONObject bookJson = new JSONObject(content);
-                    double rating = bookJson.optDouble("rating", 0.0);
-                    if (rating < 0.0 || rating > 10.0) {
-                        bookJson.put("rating", 0.0);
-                        Files.write(path, bookJson.toString().getBytes(StandardCharsets.UTF_8));
-                        System.out.println("Updated invalid rating to 0.0 for ISBN: " + bookJson.getString("isbn"));
+                    JSONTokener tokener = new JSONTokener(content);
+                    Object json = tokener.nextValue();
+                    if (json instanceof JSONObject) {
+                        JSONObject bookJson = (JSONObject) json;
+                        double rating = bookJson.optDouble("rating", 0.0);
+                        if (rating < 0.0 || rating > 10.0) {
+                            bookJson.put("rating", 0.0);
+                            Files.write(path, bookJson.toString().getBytes(StandardCharsets.UTF_8));
+                            System.out.println("Updated invalid rating to 0.0 for ISBN: " + bookJson.optString("isbn", "unknown"));
+                        }
+                    } else if (json instanceof JSONArray) {
+                        // JSONArray için bir işlem tanımlanmadı, gerekiyorsa buraya ekleme yapılabilir
+                        System.out.println("Skipping JSONArray file for the Rating conversion process at: " + path);
                     }
                 } catch (IOException e) {
                     System.err.println("Error updating rating: " + e.getMessage());
@@ -193,6 +379,7 @@ public class GUI extends Application {
             System.err.println("Failed to access books directory: " + e.getMessage());
         }
     }
+
 
 
 
@@ -259,11 +446,15 @@ public class GUI extends Application {
 
 
         //HELP & ABOUT BUTTONS
-        Button helpButton = new Button("Help");
-        Button aboutButton = new Button("About");
-        HBox helpAboutBox = new HBox(10, helpButton, aboutButton);
-        helpAboutBox.setAlignment(Pos.CENTER_RIGHT);
-        helpAboutBox.setPadding(new Insets(0, 20, 10, 0));
+        MenuBar menuBar = new MenuBar();
+        Menu helpMenu = new Menu("Help");
+        MenuItem helpMenuItem = new MenuItem("Help");
+        Menu aboutMenu = new Menu("About");
+        MenuItem aboutMenuItem = new MenuItem("About");
+        helpMenu.getItems().add(helpMenuItem);
+        aboutMenu.getItems().add(aboutMenuItem);
+        menuBar.getMenus().addAll(helpMenu,aboutMenu);
+
 
         //SEARCH BUTTON, FILTER BUTTON & SEARCHING TEXT FIELD
         Label searchLabel = new Label("Search a book:");
@@ -281,7 +472,7 @@ public class GUI extends Application {
 
 
         //title, help/about bar, ve search controls için toplayout vboxunda birleştirme işlemi.
-        VBox topLayout = new VBox(5, titleLabel, helpAboutBox, searchAndFiltersBox);
+        VBox topLayout = new VBox(5,menuBar, titleLabel, searchAndFiltersBox);
         topLayout.setAlignment(Pos.CENTER);
 
 
@@ -433,43 +624,38 @@ public class GUI extends Application {
 
         //HELP BUTTON ACTION
 
-        helpButton.setOnAction(e -> {
+        helpMenuItem.setOnAction(e -> {
             class IndexContainer {
                 int index;
             }
+
             final IndexContainer currentPageIndex = new IndexContainer();
+
             String[] helpPages = {
-                    "  Need help? Don't worry!" +
-                            "\n  Here are some tips on how to use the program." +
-                            "\n" +
-                            "\n  To add a new book to your library, click the \"Add\" button." +
-                            "\n  To edit a book, click the \"Edit\" button." +
-                            "\n  To delete a book, click the \"Delete\" button." +
-                            "\n  To import a book, click the \"Import JSON\" button." +
-                            "\n  To export a book, click the \"Export JSON\" button." +
-                            "\n" +
-                            "\n  You can see the next page for more help.",
-                    " You can search a book by entering information (title, ISBN etc.) in the blank after the \"Search a book:\" writing. And then all you need to do is clicking the \"Search\" button!" +
-                            "\n" +
-                            "\n  To see the filters you can use, click the \"Filters\" button. You can select the filters you want to use, and then click the \"Apply Filters\" button. To clear the filters, just click the \"Clear Filters\" button."
+                    "Need help? Don't worry!\n" +
+                            "Here are some tips on how to use the program:\n" +
+                            "- To add a new book to your library, click the \"Add\" button.\n" +
+                            "- To edit a book, click the \"Edit\" button.\n" +
+                            "- To delete a book, click the \"Delete\" button.\n" +
+                            "- To import a book, click the \"Import JSON\" button.\n" +
+                            "- To export a book, click the \"Export JSON\" button.\n" +
+                            "You can see the next page for more help.",
+
+                    "You can search a book by entering information (title, ISBN etc.) after the 'Search a book:' label. Then, just click the \"Search\" button!\n" +
+                            "- To see the filters you can use, click the \"Filters\" button.\n" +
+                            "- Select the filters you want to use and click the \"Apply Filters\" button.\n" +
+                            "- To clear the filters, click the \"Clear Filters\" button."
             };
+
             Stage helpStage = new Stage();
             helpStage.setTitle("Help");
 
             // Help content
             Label helpLabel = new Label(helpPages[currentPageIndex.index]);
+            helpLabel.setWrapText(true);
 
             // Navigation buttons
             Button previousButton = new Button("Previous");
-
-
-            helpStage.setTitle("Help");
-
-            // Help content
-
-
-            // Navigation buttons
-
             previousButton.setOnAction(event -> {
                 if (currentPageIndex.index > 0) {
                     currentPageIndex.index--;
@@ -489,33 +675,23 @@ public class GUI extends Application {
             HBox buttonBox = new HBox(10);
             buttonBox.getChildren().addAll(previousButton, nextButton);
 
-            helpLabel.setText(helpPages[currentPageIndex.index]);
-            helpLabel.setWrapText(true); // Metnin otomatik olarak bir sonraki satıra geçmesini sağlar
-
-
-
             // Layout for the help window
             VBox helpLayout = new VBox(10);
             helpLayout.getChildren().addAll(helpLabel, buttonBox);
             helpLayout.setPadding(new Insets(10));
 
-            // Add listener to adjust label size when scene size changes
             helpLayout.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-                helpLabel.setPrefWidth(newWidth.doubleValue() - 20); // 20 piksel kenar boşluğu için
+                helpLabel.setPrefWidth(newWidth.doubleValue() - 20);
             });
 
             helpLayout.heightProperty().addListener((obs, oldHeight, newHeight) -> {
-                helpLabel.setPrefHeight(newHeight.doubleValue() - 20); // 20 piksel kenar boşluğu için
+                helpLabel.setPrefHeight(newHeight.doubleValue() - 20);
             });
-
-
-
 
             Scene helpScene = new Scene(helpLayout, 350, 250);
             helpStage.setScene(helpScene);
 
-
-            // Position the help window at the top right corner of the primary stage
+            // Position the help window in the top right corner of the primary stage
             double primaryX = stage.getX();
             double primaryY = stage.getY();
             double primaryWidth = stage.getWidth();
@@ -530,17 +706,13 @@ public class GUI extends Application {
             helpStage.setY(helpY);
 
             helpStage.show();
-
-
-            Scene scene = new Scene(helpButton, 300, 250);
-            stage.setScene(scene);
-            stage.show();
         });
 
 
 
+
         //ABOUT BUTTON ACTION
-        aboutButton.setOnAction(e -> {
+        aboutMenuItem.setOnAction(e -> {
             /*Henüz işlev yok*/
             System.out.println("About button is not included for Milestone-.");
             Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
@@ -551,6 +723,9 @@ public class GUI extends Application {
 
         searchButton.setOnAction(e -> {
             try {
+                isFiltered=true;
+                if(isFiltered){
+                    bookTable.setPlaceholder(new Label("No books to display for entered key word(s)."));}
                 String searchText = searchField.getText().toLowerCase();
 
                 filteredBooks.setPredicate(book -> {
@@ -625,12 +800,7 @@ public class GUI extends Application {
             sortedBooks.setComparator(Comparator.comparingInt(Book::getSearchPriority));
             // TableView'ı güncelleme
             isFiltered=true;
-            if(isFiltered==true){
-                bookTable.setPlaceholder(new Label("No books to display for the entered key words." +
-                        " Search works up to 12 characters."));
-            }else{
-                bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
-            }
+
             bookTable.setItems(sortedBooks);
             bookTable.refresh();
         });

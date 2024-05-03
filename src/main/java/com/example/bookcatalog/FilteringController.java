@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.bookcatalog.GUI.bookTable;
+import static com.example.bookcatalog.GUI.filteredBooks;
 
 public class FilteringController {
     @FXML
@@ -20,7 +21,7 @@ public class FilteringController {
     @FXML
     private Label noTagsLabel;
     @FXML
-    private CheckBox ratingAbove75, rating5to75, rating25to5, ratingBelow25, ratingAny;
+    private CheckBox ratingAbove75, rating5to75, rating25to5, ratingBelow25;
     @FXML
     private Accordion accordion;
 
@@ -28,7 +29,7 @@ public class FilteringController {
     private Map<String, CheckBox> tagCheckboxes = new HashMap<>();
     private Stage stage;
     private static Set<String> savedSelectedTags = new HashSet<>();
-    private static String savedSelectedRating = "Any"; // To save the last selected rating
+    private static Set<String> savedSelectedRatings = new HashSet<>();
 
     public void setStage(Stage stage) {
         this.stage = stage;
@@ -57,14 +58,13 @@ public class FilteringController {
     @FXML
     public void initialize() {
         System.out.println("Initializing...");
-            loadUniqueTags();
-            restoreCheckedStates();
-            initializeAccordion();
-            System.out.println("Initialization completed successfully.");
+        loadUniqueTags();
+        restoreCheckedStates();
+        initializeAccordion();
+        System.out.println("Initialization completed successfully.");
     }
     private void initializeAccordion() {
-
-       accordion.setExpandedPane(accordion.getPanes().get(0));
+        accordion.setExpandedPane(accordion.getPanes().get(0));
     }
 
 
@@ -72,7 +72,7 @@ public class FilteringController {
 
     private void loadUniqueTags() {
         Set<String> uniqueTags = new HashSet<>();
-        for (Book book : GUI.booksData) {
+        for (Book book : GUI.filteredBooks) {
             uniqueTags.addAll(book.getTags());
         }
 
@@ -90,20 +90,24 @@ public class FilteringController {
     private void restoreCheckedStates() {
         tagCheckboxes.forEach((tag, checkBox) -> checkBox.setSelected(savedSelectedTags.contains(tag)));
 
+        ratingAbove75.setSelected(savedSelectedRatings.contains("Above 7.5"));
+        rating5to75.setSelected(savedSelectedRatings.contains("5.0 - 7.5"));
+        rating25to5.setSelected(savedSelectedRatings.contains("2.5 - 5.0"));
+        ratingBelow25.setSelected(savedSelectedRatings.contains("Below 2.5"));
+
     }
 
     @FXML
     protected void applyFilters() {
         isFiltered=true;
-        if(isFiltered==true){
-            bookTable.setPlaceholder(new Label("No books to display from selected filters"));
-        }else{
-            bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
-        }
+        if(isFiltered){
+            bookTable.setPlaceholder(new Label("No books to display for the selected filters."));}
+
         Set<String> selectedTags = tagCheckboxes.values().stream()
                 .filter(CheckBox::isSelected)
                 .map(CheckBox::getText)
                 .collect(Collectors.toSet());
+        savedSelectedTags = new HashSet<>(selectedTags);
 
         // 'Any' is always implied, no need to add explicitly
         Set<String> selectedRatings = new HashSet<>();
@@ -111,11 +115,14 @@ public class FilteringController {
         if (rating5to75.isSelected()) selectedRatings.add("5.0 - 7.5");
         if (rating25to5.isSelected()) selectedRatings.add("2.5 - 5.0");
         if (ratingBelow25.isSelected()) selectedRatings.add("Below 2.5");
+        savedSelectedRatings = new HashSet<>(selectedRatings);
 
         bookTable.refresh();
 
+
         GUI.filteredBooks.setPredicate(book ->
-                matchTags(book.getTags(), selectedTags) && matchRating(book.getRating(), selectedRatings)
+                (selectedTags.isEmpty() || matchTags(book.getTags(), selectedTags)) &&
+                        (selectedRatings.isEmpty() || matchRating(book.getRating(), selectedRatings))
         );
         if (stage != null) {
             stage.close();
@@ -156,6 +163,7 @@ public class FilteringController {
         rating5to75.setSelected(false);
         rating25to5.setSelected(false);
         ratingBelow25.setSelected(false);
+        savedSelectedRatings.clear(); //Clear the saved rating selections
 
         bookTable.refresh();
 

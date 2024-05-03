@@ -153,8 +153,6 @@ public class Transactions {
 
 // Sonrasında, finalCoverImagePath değişkeni lambda ifadesi içinde kullanıyoruz.
         selectImageButton.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Only .jpg format will be accepted.");
-            alert.showAndWait();
 
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Cover Image");
@@ -469,8 +467,6 @@ public class Transactions {
 
         // Dosya seçici kullanarak yeni bir resim seçme işlemi için bir handler ayarladık.
         selectImageButton.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Only .jpg format will be accepted.");
-            alert.showAndWait();
 
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Cover Image");
