@@ -748,64 +748,65 @@ public class GUI extends Application {
         //HELP BUTTON ACTION
 
         helpMenuItemAdd.setOnAction(e -> {
-            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            // Create a new stage and layout
             Stage helpStage = new Stage();
             StackPane rootPane = new StackPane();
             rootPane.setStyle("-fx-background-color: lightgrey");
 
-            // Resmi yükle, yol düzeltildi
+            // Load the image, ensure the path is correct
             Image helpImage = new Image("file:src/coverImages/forHelpAddUpdated.png");
             ImageView imageView = new ImageView(helpImage);
 
-            // Resmin yüklenip yüklenmediğini kontrol et
+            // Check if the image is loaded
             if (helpImage.isError()) {
                 System.out.println("Image cannot be loaded. Check the file path.");
             }
 
-            imageView.setPreserveRatio(true); // Oranı koru
-            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
-            imageView.setFitWidth(700);
+            imageView.setPreserveRatio(true);
 
-            // Resmi düzene ekle ve sahneye ata
+            // Bind image view size to stack pane size
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
+
+            // Add the image to the layout and set the stage
             rootPane.getChildren().add(imageView);
             Scene scene = new Scene(rootPane, 700, 600);
-
 
             helpStage.setTitle("Add Help");
             helpStage.setScene(scene);
             helpStage.show();
-
         });
 
         helpMenuItemEdit.setOnAction(e -> {
-            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            // Create a new stage and layout
             Stage helpStage = new Stage();
             StackPane rootPane = new StackPane();
             rootPane.setStyle("-fx-background-color: lightgrey");
 
-            // Resmi yükle, yol düzeltildi
+            // Load the image, make sure the path is correct
             Image helpImage = new Image("file:src/coverImages/forHelpEditUpdated.png");
             ImageView imageView = new ImageView(helpImage);
 
-            // Resmin yüklenip yüklenmediğini kontrol et
+            // Check if the image has loaded correctly
             if (helpImage.isError()) {
                 System.out.println("Image cannot be loaded. Check the file path.");
             }
 
-            imageView.setPreserveRatio(true); // Oranı koru
-            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
-            imageView.setFitWidth(700);
+            imageView.setPreserveRatio(true); // Preserve aspect ratio
 
-            // Resmi düzene ekle ve sahneye ata
+            // Bind the image view size to the stack pane size
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
+
+            // Add the image to the layout and set the stage
             rootPane.getChildren().add(imageView);
-            Scene scene = new Scene(rootPane, 700, 600);
-
+            Scene scene = new Scene(rootPane, 700, 600); // Initial size, but can be resized
 
             helpStage.setTitle("Edit Help");
             helpStage.setScene(scene);
             helpStage.show();
-
         });
+
 
         helpMenuItemDelete.setOnAction(e -> {
             // Yeni sahneyi (stage) ve düzeni (pane) oluştur
@@ -826,6 +827,8 @@ public class GUI extends Application {
             imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
             imageView.setFitWidth(700);
 
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
             // Resmi düzene ekle ve sahneye ata
             rootPane.getChildren().add(imageView);
             Scene scene = new Scene(rootPane, 700, 600);
@@ -855,6 +858,9 @@ public class GUI extends Application {
             imageView.setPreserveRatio(true); // Oranı koru
             imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
             imageView.setFitWidth(700);
+
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
 
             // Resmi düzene ekle ve sahneye ata
             rootPane.getChildren().add(imageView);
@@ -886,6 +892,9 @@ public class GUI extends Application {
             imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
             imageView.setFitWidth(700);
 
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
+
             // Resmi düzene ekle ve sahneye ata
             rootPane.getChildren().add(imageView);
             Scene scene = new Scene(rootPane, 700, 600);
@@ -916,6 +925,9 @@ public class GUI extends Application {
             imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
             imageView.setFitWidth(700);
 
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
+
             // Resmi düzene ekle ve sahneye ata
             rootPane.getChildren().add(imageView);
             Scene scene = new Scene(rootPane, 700, 600);
@@ -945,6 +957,9 @@ public class GUI extends Application {
             imageView.setPreserveRatio(true); // Oranı koru
             imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
             imageView.setFitWidth(700);
+
+            imageView.fitWidthProperty().bind(rootPane.widthProperty());
+            imageView.fitHeightProperty().bind(rootPane.heightProperty());
 
             // Resmi düzene ekle ve sahneye ata
             rootPane.getChildren().add(imageView);
