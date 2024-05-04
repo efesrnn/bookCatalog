@@ -528,10 +528,26 @@ public class GUI extends Application {
         //HELP & ABOUT BUTTONS
         MenuBar menuBar = new MenuBar();
         Menu helpMenu = new Menu("Help");
-        MenuItem helpMenuItem = new MenuItem("Help");
+
+        MenuItem helpMenuItemAdd = new MenuItem("Add Help");
+        MenuItem helpMenuItemEdit = new MenuItem("Edit Help");
+        MenuItem helpMenuItemDelete = new MenuItem("Delete Help");
+        MenuItem helpMenuItemSearch = new MenuItem("Search Help");
+        MenuItem helpMenuItemFilters = new MenuItem("Filters Help");
+        MenuItem helpMenuItemImport = new MenuItem("Import Help");
+        MenuItem helpMenuItemExport = new MenuItem("Export Help");
+
         Menu aboutMenu = new Menu("About");
         MenuItem aboutMenuItem = new MenuItem("About");
-        helpMenu.getItems().add(helpMenuItem);
+
+        helpMenu.getItems().add(helpMenuItemAdd);
+        helpMenu.getItems().add(helpMenuItemEdit);
+        helpMenu.getItems().add(helpMenuItemDelete);
+        helpMenu.getItems().add(helpMenuItemSearch);
+        helpMenu.getItems().add(helpMenuItemFilters);
+        helpMenu.getItems().add(helpMenuItemImport);
+        helpMenu.getItems().add(helpMenuItemExport);
+
         aboutMenu.getItems().add(aboutMenuItem);
         menuBar.getMenus().addAll(helpMenu,aboutMenu);
 
@@ -731,13 +747,14 @@ public class GUI extends Application {
 
         //HELP BUTTON ACTION
 
-        helpMenuItem.setOnAction(e -> {
+        helpMenuItemAdd.setOnAction(e -> {
             // Yeni sahneyi (stage) ve düzeni (pane) oluştur
             Stage helpStage = new Stage();
             StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
 
             // Resmi yükle, yol düzeltildi
-            Image helpImage = new Image("file:src/coverImages/helpButton.png");
+            Image helpImage = new Image("file:src/coverImages/forHelpAddUpdated.png");
             ImageView imageView = new ImageView(helpImage);
 
             // Resmin yüklenip yüklenmediğini kontrol et
@@ -753,9 +770,191 @@ public class GUI extends Application {
             rootPane.getChildren().add(imageView);
             Scene scene = new Scene(rootPane, 700, 600);
 
-            helpStage.setTitle("Help");
+
+            helpStage.setTitle("Add Help");
             helpStage.setScene(scene);
             helpStage.show();
+
+        });
+
+        helpMenuItemEdit.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpEditUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Edit Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
+        });
+
+        helpMenuItemDelete.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpDeleteUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Delete Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
+        });
+
+        helpMenuItemSearch.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpSearchUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Search Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
+        });
+
+        helpMenuItemFilters.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpFiltersUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Filters Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
+        });
+
+        helpMenuItemImport.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpImportUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Import Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
+        });
+
+        helpMenuItemExport.setOnAction(e -> {
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+            rootPane.setStyle("-fx-background-color: lightgrey");
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/forHelpExportUpdated.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+
+            helpStage.setTitle("Export Help");
+            helpStage.setScene(scene);
+            helpStage.show();
+
         });
 
 
