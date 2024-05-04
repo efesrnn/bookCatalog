@@ -4,7 +4,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
+import javafx.scene.control.ScrollPane;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +35,10 @@ public class FilteringController {
 
     public void setStage(Stage stage) {
         this.stage = stage;
+        if (this.stage != null) {
+            this.stage.setMinWidth(600); // Set minimum width
+            this.stage.setMinHeight(400); // Set minimum height
+        }
     }
 
     @FXML
@@ -60,13 +66,8 @@ public class FilteringController {
         System.out.println("Initializing...");
         loadUniqueTags();
         restoreCheckedStates();
-        initializeAccordion();
         System.out.println("Initialization completed successfully.");
     }
-    private void initializeAccordion() {
-        accordion.setExpandedPane(accordion.getPanes().get(0));
-    }
-
 
     private void loadUniqueTags() {
         Set<String> uniqueTags = new HashSet<>();
@@ -74,14 +75,26 @@ public class FilteringController {
             uniqueTags.addAll(book.getTags());
         }
 
-        VBox tagsBox = (VBox) accordion.getPanes().get(0).getContent();
+        VBox tagsBox = new VBox();
         tagsBox.getChildren().clear();
         noTagsLabel.setVisible(uniqueTags.isEmpty());
         tagsBox.getChildren().add(noTagsLabel);
+
         for (String tag : uniqueTags) {
             CheckBox checkBox = new CheckBox(tag);
             tagsBox.getChildren().add(checkBox);
             tagCheckboxes.put(tag, checkBox);
+        }
+
+        if (accordion != null) {
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setContent(tagsBox);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            accordion.getPanes().get(0).setContent(scrollPane);
+            VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        } else {
+            System.out.println("Accordion is not initialized.");
         }
     }
 
@@ -92,14 +105,14 @@ public class FilteringController {
         rating5to75.setSelected(savedSelectedRatings.contains("5.0 - 7.5"));
         rating25to5.setSelected(savedSelectedRatings.contains("2.5 - 5.0"));
         ratingBelow25.setSelected(savedSelectedRatings.contains("Below 2.5"));
-
     }
 
     @FXML
     protected void applyFilters() {
-        isFiltered=true;
-        if(isFiltered){
-            bookTable.setPlaceholder(new Label("No books to display for the selected filters."));}
+        isFiltered = true;
+        if (isFiltered) {
+            bookTable.setPlaceholder(new Label("No books to display for the selected filters."));
+        }
 
         Set<String> selectedTags = tagCheckboxes.values().stream()
                 .filter(CheckBox::isSelected)
@@ -107,7 +120,6 @@ public class FilteringController {
                 .collect(Collectors.toSet());
         savedSelectedTags = new HashSet<>(selectedTags);
 
-        // 'Any' is always implied, no need to add explicitly
         Set<String> selectedRatings = new HashSet<>();
         if (ratingAbove75.isSelected()) selectedRatings.add("Above 7.5");
         if (rating5to75.isSelected()) selectedRatings.add("5.0 - 7.5");
@@ -116,7 +128,6 @@ public class FilteringController {
         savedSelectedRatings = new HashSet<>(selectedRatings);
 
         bookTable.refresh();
-
 
         GUI.filteredBooks.setPredicate(book ->
                 (selectedTags.isEmpty() || matchTags(book.getTags(), selectedTags)) &&
@@ -127,13 +138,11 @@ public class FilteringController {
         }
     }
 
-
     private boolean matchTags(List<String> bookTags, Set<String> selectedTags) {
         return selectedTags.isEmpty() || bookTags.stream().anyMatch(selectedTags::contains);
     }
 
     private boolean matchRating(double rating, Set<String> ratingFilters) {
-        // Modify to handle sets
         return ratingFilters.contains("Any") || ratingFilters.stream().anyMatch(filter -> {
             switch (filter) {
                 case "Above 7.5": return rating > 7.5;
@@ -145,23 +154,17 @@ public class FilteringController {
         });
     }
 
-
-
     @FXML
     protected void clearFilters() {
-        isFiltered=false;
-        if(isFiltered==true){
-            bookTable.setPlaceholder(new Label("No books to display from selected filters"));
-        }else{
-            bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
-        }
+        isFiltered = false;
+        bookTable.setPlaceholder(new Label("No books to display. Use 'Add' to insert new entries."));
         tagCheckboxes.values().forEach(cb -> cb.setSelected(false));
-        savedSelectedTags.clear(); // Clear the saved tag selections
+        savedSelectedTags.clear();
         ratingAbove75.setSelected(false);
         rating5to75.setSelected(false);
         rating25to5.setSelected(false);
         ratingBelow25.setSelected(false);
-        savedSelectedRatings.clear(); //Clear the saved rating selections
+        savedSelectedRatings.clear();
 
         bookTable.refresh();
 
@@ -171,5 +174,4 @@ public class FilteringController {
             stage.close();
         }
     }
-
 }
