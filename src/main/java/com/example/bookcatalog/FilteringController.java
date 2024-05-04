@@ -68,8 +68,6 @@ public class FilteringController {
     }
 
 
-
-
     private void loadUniqueTags() {
         Set<String> uniqueTags = new HashSet<>();
         for (Book book : GUI.filteredBooks) {

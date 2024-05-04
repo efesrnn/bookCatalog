@@ -25,6 +25,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.example.bookcatalog.GUI.booksData;
+
 
 public class Transactions {
     //COLORS FOR SAVE AND BACK BUTTON ANIMATION USING CSS
@@ -347,7 +349,7 @@ public class Transactions {
                     Book newBook = new Book(coverImagePath,title, subtitle, authors, translators, isbn, publisher, date,
                             edition, cover, language, rating, tags);
 
-                    Platform.runLater(() -> GUI.booksData.add(newBook));
+                    Platform.runLater(() -> booksData.add(newBook));
 
                     stage.setScene(mainScene);
                 } catch (Exception ex) {
@@ -400,6 +402,7 @@ public class Transactions {
 
 
     private static void updateBookDetails(JSONObject existingJson, Map<String, Object> userInput) {
+
         boolean isUpdated = false;
         for (String key : userInput.keySet()) {
             Object userValue = userInput.get(key);
@@ -443,108 +446,21 @@ public class Transactions {
         layout.setPadding(new Insets(10));
         layout.setAlignment(Pos.TOP_CENTER);
 
-        //Kitap kapağının resmini göstermek için bir ImageView oluşturduk.
         ImageView imageView = new ImageView();
-        imageView.setFitHeight(350); //Görüntüleme alanının yüksekliğini 350 piksel olarak ayarlıyoruz.
-        imageView.setFitWidth(350);  //Görüntüleme alanının genişliğini de aynı şekilde 350 piksel olarak ayarlıyoruz.
-        imageView.setPreserveRatio(true); //Oranı koruyup görüntü ölçeklendirme.
+        imageView.setFitHeight(350);
+        imageView.setFitWidth(350);
+        imageView.setPreserveRatio(true);
 
-        // Mevcut kitap kapağı resminin path'ini belirledikten sonra varsayılanı kullanıyoruz.
         final String[] coverImagePath = {"src/coverImages/" + selectedBook.getIsbn() + ".jpg"};
         File coverImageFile = new File(coverImagePath[0]);
 
         if (!coverImageFile.exists()) {
-            coverImagePath[0] = "src/coverImages/default_image.jpg"; // Varsayılan kitap path'i
+            coverImagePath[0] = "src/coverImages/default_image.jpg";
         }
 
-
-        // ImageView'da görüntüyü ayarladık ve emin olmak için yolun düzgün bir URI olup olmadığını kontrol ettik.
         imageView.setImage(new Image(new File(coverImagePath[0]).toURI().toString()));
-        //Yeni bir kapak resmini seçmek için kullanılan buton.
-        Button selectImageButton = new Button("Select Image");
-        // Mevcutta bulunan bir kapak resmini kaldırmak için kullandığımız buton.
-        Button removeImageButton = new Button("Remove Image");
-
-        // Dosya seçici kullanarak yeni bir resim seçme işlemi için bir handler ayarladık.
-        selectImageButton.setOnAction(e -> {
-
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Cover Image");
-            fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Image Files", "*.jpg")
-            );
-            File selectedFile = fileChooser.showOpenDialog(stage);
-            if (selectedFile != null) {
-                try {
-                    // Kopyalama path'ini tanımlama
-                    Path sourcePath = selectedFile.toPath();
-                    Path targetPath = Paths.get("src/coverImages", selectedBook.getIsbn() + getFileExtension(selectedFile.getName()));
-
-                    // Yeni resmi kopyalayıp ve mevcut dosyanın üzerine yazma işlemi.
-                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-
-                    // ImageView'i güncelleme
-                    imageView.setImage(new Image(targetPath.toUri().toString()));
-
-                    // Opsiyonel olarak eğer gerekliyse, kitabın kapak resmi yolunu kaydedilmişse güncelledik.
-                    selectedBook.setCoverImagePath(targetPath.toString());
-
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    Alert alert2 = new Alert(Alert.AlertType.ERROR, "Failed to update cover image: " + ex.getMessage());
-                    alert2.showAndWait();
-                }
-            }
-        });
 
 
-
-
-
-        removeImageButton.setOnAction(e -> {
-            try {
-                // Varsayılan resmin path'ini tanımlama
-                File defaultImageFile = new File("src/coverImages/default_image.jpg");
-                if (defaultImageFile.exists()) {
-                    imageView.setImage(new Image(defaultImageFile.toURI().toString()));
-                } else {
-                    System.err.println("Default image file not found.");
-                }
-
-                // Çeşitli uzantılara sahip kapak görseli dosyasının silinmesini denemek.
-                String[] possibleExtensions = {".jpg",};
-                boolean fileDeleted = false;
-                for (String extension : possibleExtensions) {
-                    File currentCoverImageFile = new File("src/coverImages/" + selectedBook.getIsbn() + extension);
-                    if (currentCoverImageFile.exists()) {
-                        Files.delete(currentCoverImageFile.toPath());  // Geçerli kapak resmi dosyasını sildik.
-                        System.out.println("Cover image file deleted successfully: " + currentCoverImageFile.getName());
-                        fileDeleted = true;
-                        break;
-                    }
-                }
-                if (!fileDeleted) {
-                    System.out.println("No cover image file found to delete.");
-                }
-            } catch (IOException ex) {
-                System.err.println("Failed to delete the cover image file: " + ex.getMessage());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                System.err.println("Failed to load default image: " + ex.getMessage());
-            }
-
-            // Kitabın kapak resmi path'ini 'null' olarak güncelledik.
-            selectedBook.setCoverImagePath(null);
-        });
-
-
-
-        // LAYOUT FOR IMAGE CONTROLS
-        HBox imageControls = new HBox(10, selectImageButton, removeImageButton);
-        imageControls.setAlignment(Pos.CENTER);
-
-        // ADDING THE NEW IMAGEVIEW AND ITS CONTROLS TO THE MAIN LAYOUT
-        layout.getChildren().addAll(imageView, imageControls);
 
         VBox bookInfoEnteringField = new VBox(10);
         bookInfoEnteringField.setAlignment(Pos.TOP_CENTER);
@@ -736,6 +652,90 @@ public class Transactions {
             stage.setScene(mainScene);
         });
 
+        Button selectImageButton = new Button("Select Image");
+        Button removeImageButton = new Button("Remove Image");
+
+        selectImageButton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select Cover Image");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Image Files", "*.jpg")
+            );
+            File selectedFile = fileChooser.showOpenDialog(stage);
+            if (selectedFile != null) {
+                try {
+                    Path sourcePath = selectedFile.toPath();
+                    String fileName = selectedBook.getIsbn() + getFileExtension(selectedFile.getName());
+                    Path targetPath = Paths.get("src/coverImages", fileName);
+                    if (Files.notExists(targetPath)) {
+                        Files.createFile(targetPath);  // Yeni dosya oluştur
+                    }
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+                    // Güncellenmiş dosya yolunu kitap nesnesinde ve ImageView'da ayarla
+                    selectedBook.setCoverImagePath(targetPath.toString());
+                    imageView.setImage(new Image(targetPath.toUri().toString()));
+
+                    System.out.println("Cover image updated successfully to " + targetPath);
+
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update cover image: " + ex.getMessage());
+                    alert.showAndWait();
+                }
+            }
+        });
+
+
+
+
+
+
+        removeImageButton.setOnAction(e -> {
+            try {
+                // Varsayılan resmin path'ini tanımlama
+                File defaultImageFile = new File("src/coverImages/default_image.jpg");
+                if (defaultImageFile.exists()) {
+                    imageView.setImage(new Image(defaultImageFile.toURI().toString()));
+                } else {
+                    System.err.println("Default image file not found.");
+                }
+
+                // Çeşitli uzantılara sahip kapak görseli dosyasının silinmesini denemek.
+                String[] possibleExtensions = {".jpg",};
+                boolean fileDeleted = false;
+                for (String extension : possibleExtensions) {
+                    File currentCoverImageFile = new File("src/coverImages/" + selectedBook.getIsbn() + extension);
+                    if (currentCoverImageFile.exists()) {
+                        Files.delete(currentCoverImageFile.toPath());  // Geçerli kapak resmi dosyasını sildik.
+                        System.out.println("Cover image file deleted successfully: " + currentCoverImageFile.getName());
+                        fileDeleted = true;
+                        break;
+                    }
+                }
+                if (!fileDeleted) {
+                    System.out.println("No cover image file found to delete.");
+                }
+            } catch (IOException ex) {
+                System.err.println("Failed to delete the cover image file: " + ex.getMessage());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                System.err.println("Failed to load default image: " + ex.getMessage());
+            }
+
+            // Kitabın kapak resmi path'ini 'null' olarak güncelledik.
+            selectedBook.setCoverImagePath(null);
+        });
+
+
+
+        // LAYOUT FOR IMAGE CONTROLS
+        HBox imageControls = new HBox(10, selectImageButton, removeImageButton);
+        imageControls.setAlignment(Pos.CENTER);
+
+        // ADDING THE NEW IMAGEVIEW AND ITS CONTROLS TO THE MAIN LAYOUT
+        layout.getChildren().addAll(imageView, imageControls);
+
 
 
 
@@ -815,7 +815,7 @@ public class Transactions {
         });
         Platform.runLater(() -> {
             System.out.println("Layout has been refreshed due to change of files.");
-            GUI.booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldırmak.
+            booksData.removeAll(selectedBooks);  // Seçili kitapları veri listesinden kaldırmak.
             stage.setScene(mainScene); // Refresh için Main Layout'u yeniden yükleme.
         });
     }

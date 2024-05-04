@@ -3,6 +3,7 @@ package com.example.bookcatalog;
 //JavaFX arayüz tasarımları için gerekli importlar:
 
 import javafx.application.Application;
+import javafx.application.HostServices;
 import javafx.application.Platform; // Layoutlar arası geçişlerin güzel olması için
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -15,10 +16,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
@@ -26,6 +26,7 @@ import javafx.scene.Parent;
 
 // Dosya işlemleri için Java IO importları:
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -42,6 +43,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -94,9 +96,7 @@ public class GUI extends Application {
 
 
 
-
-
-    private void loadExistingBooks(String directoryPath) {
+    public void loadExistingBooks(String directoryPath) {
         try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
@@ -104,6 +104,10 @@ public class GUI extends Application {
         } catch (IOException e) {
             System.out.println("Directory for books does not exists. Add a book using 'Book Catalog'to create directory");
         }
+    }
+    private boolean isValidISBN(String isbn) {
+        // Sayısal karakterler ve ISBN-10 için sonunda 'X' olabilir
+        return Pattern.matches("^[0-9Xx]+$", isbn);
     }
 
     private void processFile(Path path) {
@@ -113,7 +117,23 @@ public class GUI extends Application {
                 JSONTokener tokener = new JSONTokener(content);
                 Object json = tokener.nextValue();
                 if (json instanceof JSONObject) {
-                    processBookJson((JSONObject) json, path);
+                    JSONObject jsonObject = (JSONObject) json;
+                    String isbn = jsonObject.optString("isbn", "unknown");
+                    // ISBN geçerli mi kontrol et
+                    if (isValidISBN(isbn)) {
+                        Path booksDirectory = Paths.get("books");
+                        Files.createDirectories(booksDirectory); // Eğer dizin yoksa oluştur
+                        Path newPath = booksDirectory.resolve(isbn + ".json");
+
+                        // Yeni ISBN dosyasını yaz veya üzerine yaz
+                        Files.writeString(newPath, jsonObject.toString());
+                        System.out.println("Saved or updated JSON file as: " + newPath.getFileName());
+
+                        // İşlemi tamamladıktan sonra yeni dosyayla işleme devam et
+                        processBookJson(jsonObject, newPath);
+                    } else {
+                        System.out.println("Invalid ISBN found in file: " + path.getFileName() + ", skipping processing.");
+                    }
                 } else if (json instanceof JSONArray) {
                     System.out.println("Found JSON Array at: " + path);
                     System.out.println("Default save process can only handle JSON Objects.");
@@ -123,12 +143,16 @@ public class GUI extends Application {
                     System.out.println("Unexpected JSON format at: " + path);
                 }
             } catch (IOException e) {
-                System.out.println("Error reading file: " + path);
+                System.out.println("Error reading or writing file: " + path);
+                e.printStackTrace();
             }
         } else {
             System.out.println("File does not exist: " + path);
         }
     }
+
+
+
 
     private void splitJsonArrayIntoFiles(Path jsonArrayPath) {
         String uniqueTempFileName = "temp_" + UUID.randomUUID().toString() + ".json";
@@ -176,26 +200,6 @@ public class GUI extends Application {
     }
 
 
-    private void copyDefaultImage(String isbn) {
-        Path sourceImagePath = Paths.get("src/coverImages/default_image.jpg");
-        Path destinationImagePath = Paths.get("src/coverImages/" + isbn + ".jpg");
-
-        try {
-            // Check if the destination file already exists before copying
-            if (!Files.exists(destinationImagePath)) {
-                Files.copy(sourceImagePath, destinationImagePath, StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("Cover image file does not exists for the file: "+isbn+".json.\n"+"Default image has assigned for ISBN: " + isbn);
-            }
-
-        } catch (IOException e) {
-            System.err.println("Failed to copy image for ISBN: " + isbn);
-            e.printStackTrace();
-        }
-    }
-
-
-
-
 
     private void processBookJson(JSONObject json, Path path) throws IOException {
 
@@ -203,7 +207,20 @@ public class GUI extends Application {
         String content = Files.readString(path);
         JSONObject jsonObject = new JSONObject(content);
         String isbn = jsonObject.optString("isbn", "unknown");
-        copyDefaultImage(isbn);
+        Path destinationPath = Paths.get("books/" + isbn + ".json");
+        if (!Files.exists(destinationPath)) {
+            Files.copy(path, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Book file copied to 'books' directory with ISBN as filename: " + destinationPath);
+        }
+
+        String coverImagePath = json.optString("coverImagePath", "src/coverImages/default_image.jpg");
+        Path coverImagePathFile = Paths.get(coverImagePath);
+        if (!Files.exists(coverImagePathFile)) {
+            System.out.println("Cover image file not found at: " + coverImagePath + ", using default image.");
+            json.put("coverImagePath", "src/coverImages/default_image.jpg");
+            needsUpdate = true;
+        }
+
 
         // Anahtarlar listesi ve varsayılan değerler
         if (!json.has("title")) {
@@ -319,6 +336,69 @@ public class GUI extends Application {
     }
 
 
+    private void exportSelectedItems(Stage stage, TableView<Book> tableView) {
+        if (tableView.getSelectionModel().getSelectedItems().isEmpty()) {
+            System.out.println("No items selected.");
+            Alert alert= new Alert(Alert.AlertType.WARNING,"No line selected.");
+            alert.showAndWait();
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName("ExportedData.json");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null) {
+            try (FileWriter fileWriter = new FileWriter(file)) {
+                JSONArray jsonArray = new JSONArray();
+                tableView.getSelectionModel().getSelectedItems().forEach(book -> {
+                    JSONObject jsonObj = new JSONObject();
+                    jsonObj.put("date", book.getDate());
+                    jsonObj.put("isbn", book.getIsbn());
+                    jsonObj.put("rating", book.getRating());
+                    jsonObj.put("edition", book.getEdition());
+                    jsonObj.put("language", book.getLanguage());
+                    jsonObj.put("title", book.getTitle());
+                    jsonObj.put("tags", new JSONArray(book.getTags()));
+                    jsonObj.put("cover", book.getCover());
+                    jsonObj.put("translators", new JSONArray(book.getTranslators()));
+                    jsonObj.put("subtitle", book.getSubtitle());
+                    jsonObj.put("coverImagePath", book.getCoverImagePath());
+                    jsonObj.put("publisher", book.getPublisher());
+                    jsonObj.put("authors", new JSONArray(book.getAuthors()));
+
+                    jsonArray.put(jsonObj);
+
+                    // Check for cover image and copy it
+                    copyCoverImage(book.getIsbn(), file.getParent());
+                });
+
+                fileWriter.write(jsonArray.toString(4)); // Pretty print with 4-space indentation
+                fileWriter.flush();
+                System.out.println("Selected items exported successfully to " + file.getPath());
+            } catch (IOException e) {
+                System.err.println("Failed to save the file: " + e.getMessage());
+            }
+        }
+    }
+
+    private void copyCoverImage(String isbn, String destinationDir) {
+        Path sourcePath = Paths.get("src/coverImages/" + isbn + ".jpg");
+        Path destinationPath = Paths.get(destinationDir, isbn + ".jpg");
+
+        try {
+            if (Files.exists(sourcePath)) {
+                Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("Cover image copied successfully to " + destinationPath);
+            } else {
+                System.out.println("No cover image found for ISBN: " + isbn);
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to copy cover image for ISBN: " + isbn);
+            e.printStackTrace();
+        }
+    }
 
 
 
@@ -440,7 +520,7 @@ public class GUI extends Application {
         loadExistingBooks("books");
 
         filteredBooks = new FilteredList<>(booksData, p -> true);
-        Label titleLabel = new Label("Book Catalog [v1.8]");
+        Label titleLabel = new Label("Book Catalog [v1.9]");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setPadding(new Insets(5));
 
@@ -513,20 +593,47 @@ public class GUI extends Application {
 
         //IMPORT & EXPORT JSON BUTTONS
         Button importButton = new Button("Import JSON");
-        importButton.setOnAction(e->{
-            /*Henüz işlev yok*/
-            System.out.println("Import JSON button is not included for Milestone-2");
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Import JSON button is not included for Milestone-2");
-            alert.showAndWait();
-        });
-        Button exportButton = new Button("Export JSON");
-        exportButton.setOnAction(e-> {
-            /*Henüz işlev yok*/
-            System.out.println("Export JSON button is not included for Milestone-2");
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Export JSON button is not included for Milestone-2");
-            alert.showAndWait();
+        importButton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select JSON Files");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+            List<File> selectedFiles = fileChooser.showOpenMultipleDialog(stage);
+
+            if (selectedFiles != null) {
+                selectedFiles.forEach(file -> {
+                    Path path = file.toPath();
+                    processFile(path);
+
+                    // Resim dosyasını kontrol et ve kopyala
+                    try {
+                        String jsonContent = Files.readString(path);
+                        JSONObject jsonObject = new JSONObject(jsonContent);
+                        String isbn = jsonObject.optString("isbn", "unknown");
+
+                        Path imageFilePath = path.getParent().resolve(path.getFileName().toString().replaceAll(".json$", ".jpg"));
+                        Path destinationImagePath = Paths.get("src/coverImages/" + isbn + ".jpg");
+
+                        if (Files.exists(imageFilePath) && !Files.exists(destinationImagePath)) {
+                            Files.copy(imageFilePath, destinationImagePath, StandardCopyOption.REPLACE_EXISTING);
+                            System.out.println("Cover image file has found! Copied to 'src/coverImages' directory with ISBN as filename: " + isbn + ".jpg\n");
+                        }
+                    } catch (IOException | JSONException ex) {
+                        System.err.println("Couldn't find any cover image file for ISBN: " + ex.getMessage()+"\n");
+                    }
+                    Platform.runLater(() -> {
+                        booksData.clear();
+                        loadExistingBooks("books");
+                        System.out.println("Reloading books after separating JSON Array...");
+                    });
+                });
+            }
         });
 
+        Button exportButton = new Button("Export JSON");
+        exportButton.setOnAction(e-> {
+            exportSelectedItems(stage,bookTable);
+
+        });
 
 
         //BOTTOM-DEEPER BUTTONS HBOX (IMPORT-EXPORT)
@@ -625,98 +732,63 @@ public class GUI extends Application {
         //HELP BUTTON ACTION
 
         helpMenuItem.setOnAction(e -> {
-            class IndexContainer {
-                int index;
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/helpButton.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
             }
 
-            final IndexContainer currentPageIndex = new IndexContainer();
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
 
-            String[] helpPages = {
-                    "Need help? Don't worry!\n" +
-                            "Here are some tips on how to use the program:\n" +
-                            "- To add a new book to your library, click the \"Add\" button.\n" +
-                            "- To edit a book, click the \"Edit\" button.\n" +
-                            "- To delete a book, click the \"Delete\" button.\n" +
-                            "- To import a book, click the \"Import JSON\" button.\n" +
-                            "- To export a book, click the \"Export JSON\" button.\n" +
-                            "You can see the next page for more help.",
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
 
-                    "You can search a book by entering information (title, ISBN etc.) after the 'Search a book:' label. Then, just click the \"Search\" button!\n" +
-                            "- To see the filters you can use, click the \"Filters\" button.\n" +
-                            "- Select the filters you want to use and click the \"Apply Filters\" button.\n" +
-                            "- To clear the filters, click the \"Clear Filters\" button."
-            };
-
-            Stage helpStage = new Stage();
             helpStage.setTitle("Help");
-
-            // Help content
-            Label helpLabel = new Label(helpPages[currentPageIndex.index]);
-            helpLabel.setWrapText(true);
-
-            // Navigation buttons
-            Button previousButton = new Button("Previous");
-            previousButton.setOnAction(event -> {
-                if (currentPageIndex.index > 0) {
-                    currentPageIndex.index--;
-                    helpLabel.setText(helpPages[currentPageIndex.index]);
-                }
-            });
-
-            Button nextButton = new Button("Next");
-            nextButton.setOnAction(event -> {
-                if (currentPageIndex.index < helpPages.length - 1) {
-                    currentPageIndex.index++;
-                    helpLabel.setText(helpPages[currentPageIndex.index]);
-                }
-            });
-
-            // Layout for navigation buttons
-            HBox buttonBox = new HBox(10);
-            buttonBox.getChildren().addAll(previousButton, nextButton);
-
-            // Layout for the help window
-            VBox helpLayout = new VBox(10);
-            helpLayout.getChildren().addAll(helpLabel, buttonBox);
-            helpLayout.setPadding(new Insets(10));
-
-            helpLayout.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-                helpLabel.setPrefWidth(newWidth.doubleValue() - 20);
-            });
-
-            helpLayout.heightProperty().addListener((obs, oldHeight, newHeight) -> {
-                helpLabel.setPrefHeight(newHeight.doubleValue() - 20);
-            });
-
-            Scene helpScene = new Scene(helpLayout, 350, 250);
-            helpStage.setScene(helpScene);
-
-            // Position the help window in the top right corner of the primary stage
-            double primaryX = stage.getX();
-            double primaryY = stage.getY();
-            double primaryWidth = stage.getWidth();
-            double primaryHeight = stage.getHeight();
-            double helpWidth = helpScene.getWidth();
-            double helpHeight = helpScene.getHeight();
-
-            double helpX = primaryX + primaryWidth - helpWidth;
-            double helpY = primaryY;
-
-            helpStage.setX(helpX);
-            helpStage.setY(helpY);
-
+            helpStage.setScene(scene);
             helpStage.show();
         });
 
 
 
 
+
+
         //ABOUT BUTTON ACTION
         aboutMenuItem.setOnAction(e -> {
-            /*Henüz işlev yok*/
-            System.out.println("About button is not included for Milestone-.");
-            Alert alert = new Alert(Alert.AlertType.WARNING, "About button is not included for Milestone-2.");
-            alert.showAndWait();
+            // Yeni sahneyi (stage) ve düzeni (pane) oluştur
+            Stage helpStage = new Stage();
+            StackPane rootPane = new StackPane();
+
+            // Resmi yükle, yol düzeltildi
+            Image helpImage = new Image("file:src/coverImages/aboutButton.png");
+            ImageView imageView = new ImageView(helpImage);
+
+            // Resmin yüklenip yüklenmediğini kontrol et
+            if (helpImage.isError()) {
+                System.out.println("Image cannot be loaded. Check the file path.");
+            }
+
+            imageView.setPreserveRatio(true); // Oranı koru
+            imageView.setFitHeight(450); // Gösterilecek resmin boyutunu ayarla
+            imageView.setFitWidth(700);
+
+            // Resmi düzene ekle ve sahneye ata
+            rootPane.getChildren().add(imageView);
+            Scene scene = new Scene(rootPane, 700, 600);
+
+            helpStage.setTitle("About");
+            helpStage.setScene(scene);
+            helpStage.show();
         });
 
 
