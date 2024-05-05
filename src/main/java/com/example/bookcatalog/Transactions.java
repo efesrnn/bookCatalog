@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.example.bookcatalog.GUI.booksData;
@@ -201,7 +202,7 @@ public class Transactions {
         //Bütün kitap dataları için yeni Map kullanıyoruz.
 
         Map<String, TextField> fieldMap = new HashMap<>();
-        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover", "Language", "Rating", "Tags"};
+        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover Type", "Language", "Rating", "Tags","Page Count"};
 
 
         //A LOOP TO CREATE ALL LABELS AND TEXTFIELDS IN ORDER
@@ -245,7 +246,7 @@ public class Transactions {
             }
 
 
-            if (!isbn.matches("\\d{10,13}")) {
+            if (isbn.matches("^[0-9Xx-]+$")) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 10 or 13-digit numeric value.");
                 alert.showAndWait();
                 return;
@@ -306,7 +307,7 @@ public class Transactions {
 
                     //REACHING THE TEXTFIELDS THAT USER FILL BY USING MAP
 
-                    String coverImage = coverImagePath;
+                    String cover = coverImagePath;
                     //String title = fieldMap.get("Title").getText();
                     String subtitle = fieldMap.get("Subtitle").getText();
                     List<String> authors = Arrays.asList(fieldMap.get("Authors").getText().split(",\\s*"));
@@ -314,16 +315,17 @@ public class Transactions {
                     String publisher = fieldMap.get("Publisher").getText();
                     String date = fieldMap.get("Date").getText();
                     String edition = fieldMap.get("Edition").getText();
-                    String cover = fieldMap.get("Cover").getText();
+                    String coverType = fieldMap.get("Cover Type").getText();
                     String language = fieldMap.get("Language").getText();
                     List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
+                    String numberOfPages =fieldMap.get("Page Count").getText();
 
 
                     //CREATING THE JSON FILE VIA INFO WE GET FROM TEXT FIELDS
 
 
                     JSONObject bookJson = new JSONObject();
-                    bookJson.put("coverImagePath", coverImagePath);
+                    bookJson.put("cover", coverImagePath);
                     bookJson.put("title", title);
                     bookJson.put("subtitle", subtitle);
                     bookJson.put("authors", new JSONArray(authors));
@@ -332,10 +334,11 @@ public class Transactions {
                     bookJson.put("publisher", publisher);
                     bookJson.put("date", date);
                     bookJson.put("edition", edition);
-                    bookJson.put("cover", cover);
+                    bookJson.put("coverType", coverType);
                     bookJson.put("language", language);
                     bookJson.put("rating", rating);
                     bookJson.put("tags", new JSONArray(tags));
+                    bookJson.put("numberOfPages",numberOfPages);
 
 
 
@@ -347,7 +350,7 @@ public class Transactions {
 
                     //UPDATING THE BOOK TABLE -TABLEVIEW-
                     Book newBook = new Book(coverImagePath,title, subtitle, authors, translators, isbn, publisher, date,
-                            edition, cover, language, rating, tags);
+                            edition, coverType, language, rating, tags,numberOfPages);
 
                     Platform.runLater(() -> booksData.add(newBook));
 
@@ -427,10 +430,11 @@ public class Transactions {
         selectedBook.setPublisher(updatedJson.getString("publisher"));
         selectedBook.setDate(updatedJson.getString("date"));
         selectedBook.setEdition(updatedJson.getString("edition"));
-        selectedBook.setCover(updatedJson.getString("cover"));
+        selectedBook.setCoverType(updatedJson.getString("coverType"));
         selectedBook.setLanguage(updatedJson.getString("language"));
         selectedBook.setRating(updatedJson.getDouble("rating"));
         selectedBook.setTags(Arrays.asList(updatedJson.getJSONArray("tags").toList().toArray(new String[0])));
+        selectedBook.setNumberOfPages(updatedJson.getString("numberOfPages"));
 
         Platform.runLater(() -> {
             System.out.println(selectedBook.getTitle()+ " (ISBN: " + selectedBook.getIsbn() + ") has changed.");
@@ -467,7 +471,7 @@ public class Transactions {
         bookInfoEnteringField.setPadding(new Insets(20, 40, 20, 40));
 
         Map<String, TextField> fieldMap = new HashMap<>();
-        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover", "Language", "Rating", "Tags"};
+        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover Type", "Language", "Rating", "Tags","Page Count"};
 
         // CREATE EACH ATTRIBUTE'S LABEL AND TEXT FIELD BY LOOP
         for (String fieldName : fieldNames) {
@@ -500,8 +504,8 @@ public class Transactions {
                 case "Edition":
                     textField.setText(selectedBook.getEdition());
                     break;
-                case "Cover":
-                    textField.setText(selectedBook.getCover());
+                case "Cover Type":
+                    textField.setText(selectedBook.getCoverType());
                     break;
                 case "Language":
                     textField.setText(selectedBook.getLanguage());
@@ -511,6 +515,9 @@ public class Transactions {
                     break;
                 case "Tags":
                     textField.setText(String.join(", ", selectedBook.getTags()));
+                    break;
+                case "Page Count":
+                    textField.setText(selectedBook.getNumberOfPages());
                     break;
             }
 
@@ -555,8 +562,15 @@ public class Transactions {
                 return;
             }
 
-            if (!isbn.matches("\\d{10,13}")) {
+            if (!isbn.matches("^[0-9Xx-]+$")) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a numeric value with either 10 or 13 digits.");
+                alert.showAndWait();
+                return;
+            }
+
+
+              if(checkIsbnExists("books", isbn)&& !newIsbn.equals(oldIsbn)) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
                 alert.showAndWait();
                 return;
             }
@@ -578,12 +592,46 @@ public class Transactions {
             userInput.put("publisher", fieldMap.get("Publisher").getText());
             userInput.put("date", fieldMap.get("Date").getText());
             userInput.put("edition", fieldMap.get("Edition").getText());
-            userInput.put("cover", fieldMap.get("Cover").getText());
+            userInput.put("coverType", fieldMap.get("Cover Type").getText());
             userInput.put("language", fieldMap.get("Language").getText());
             userInput.put("rating", rating);
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
+            userInput.put("numberOfPages", fieldMap.get("Page Count").getText());
 
             // Lambda dışında yolları tanımlayıp hesapladık.
+
+
+
+            String directoryPath = "books";
+            String filePath = directoryPath + "/" + isbn + ".json";
+
+            try {
+                Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
+                Path path = Paths.get(filePath);
+                JSONObject existingJson = new JSONObject(readJsonFile(path));
+                System.out.println("Json and entered data successfully compared.");
+                updateBookDetails(existingJson, userInput);
+
+                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); //Bu satırda, mevcut JSON verilerini dosyaya yazarak mevcut içeriği değiştiriyoruz.
+                System.out.println("Successfully updated: " + path);
+                updateObservableList(selectedBook, existingJson);
+                Platform.runLater(() -> GUI.bookTable.refresh());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
+                System.out.println("ISBN match Error! Do not change ISBN manually in text editor.");
+                alert.showAndWait();
+            }
+            stage.setScene(mainScene);
+        });
+
+        Button selectImageButton = new Button("Select Image");
+        Button removeImageButton = new Button("Remove Image");
+
+        selectImageButton.setOnAction(e -> {
+            String isbn = fieldMap.get("ISBN").getText();
+            Map<String, Object> userInput = new HashMap<>();
+
             final String localCoverImagePath = coverImagePath[0]; // coverImagePath'in güncel halini tutuyoruz.
             final String currentISBNPath = "src/coverImages/" + selectedBook.getIsbn() + ".jpg";
             final String newISBNPath = "src/coverImages/" + isbn + ".jpg";
@@ -595,7 +643,7 @@ public class Transactions {
                     Path targetPath = Paths.get(currentISBNPath);
                     Files.createDirectories(targetPath.getParent()); //Directory'nin var olduğundan emin olduk ki herhangi bir hatayla karşılaşılmasın.
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    userInput.put("coverImagePath", targetPath.toString());
+                    userInput.put("cover", targetPath.toString());
                 } catch (NoSuchFileException ex2){
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Image Successfully removed. " + ex2.getMessage());
                     alert.showAndWait();
@@ -629,33 +677,6 @@ public class Transactions {
             }
 
 
-            String directoryPath = "books";
-            String filePath = directoryPath + "/" + isbn + ".json";
-
-            try {
-                Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
-                Path path = Paths.get(filePath);
-                JSONObject existingJson = new JSONObject(readJsonFile(path));
-                System.out.println("Json and entered data successfully compared.");
-                updateBookDetails(existingJson, userInput);
-
-                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); //Bu satırda, mevcut JSON verilerini dosyaya yazarak mevcut içeriği değiştiriyoruz.
-                System.out.println("Successfully updated: " + path);
-                updateObservableList(selectedBook, existingJson);
-                Platform.runLater(() -> GUI.bookTable.refresh());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
-                System.out.println("ISBN match Error! Do not change ISBN manually in text editor.");
-                alert.showAndWait();
-            }
-            stage.setScene(mainScene);
-        });
-
-        Button selectImageButton = new Button("Select Image");
-        Button removeImageButton = new Button("Remove Image");
-
-        selectImageButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Cover Image");
             fileChooser.getExtensionFilters().addAll(
@@ -673,7 +694,7 @@ public class Transactions {
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
 
                     // Güncellenmiş dosya yolunu kitap nesnesinde ve ImageView'da ayarla
-                    selectedBook.setCoverImagePath(targetPath.toString());
+                    selectedBook.setCover(targetPath.toString());
                     imageView.setImage(new Image(targetPath.toUri().toString()));
 
                     System.out.println("Cover image updated successfully to " + targetPath);
@@ -724,7 +745,7 @@ public class Transactions {
             }
 
             // Kitabın kapak resmi path'ini 'null' olarak güncelledik.
-            selectedBook.setCoverImagePath(null);
+            selectedBook.setCover(null);
         });
 
 

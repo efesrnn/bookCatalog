@@ -26,7 +26,7 @@ public class TableviewBookDataController {
     @FXML
     private Label editionLabel;
     @FXML
-    private Label coverLabel;
+    private Label coverTypeLabel;
     @FXML
     private Label languageLabel;
     @FXML
@@ -61,14 +61,14 @@ public class TableviewBookDataController {
         publisherLabel.setText(book.getPublisher());
         dateLabel.setText(book.getDate());
         editionLabel.setText(book.getEdition());
-        coverLabel.setText(book.getCover());
+        coverTypeLabel.setText(book.getCoverType());
         languageLabel.setText(book.getLanguage());
         ratingLabel.setText(String.format("%.2f", book.getRating()));
         tagsLabel.setText(String.join(", ", book.getTags()));
 
-        if (book.getCoverImagePath() != null && !book.getCoverImagePath().isEmpty()) {
+        if (book.getCover() != null && !book.getCover().isEmpty()) {
             // Dosya yolunu doğru şekilde ayarlama
-            Image image = new Image(Paths.get(book.getCoverImagePath()).toUri().toString());
+            Image image = new Image(Paths.get(book.getCover()).toUri().toString());
             coverImageView.setImage(image);
         } else {
             // Varsayılan bir görüntü ayarlama

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Book {
-    private String coverImagePath;
+    private String cover;
     private String title;
     private String subtitle;
     private List<String> authors;
@@ -17,16 +17,18 @@ public class Book {
     private String publisher;
     private String date;
     private String edition;
-    private String cover; //Resim file path ile kullanılıyor o yüzden String kalsın.
+    private String coverType; //Resim file path ile kullanılıyor o yüzden String kalsın.
     private String language;
     private double rating; //4.5 gibi noktalı bir değer olabileceği için int yerine double kullanıyoruz.
     private List<String> tags; //Birden fazla tag olabileceği için bir String List'i kullanıyoruz.
+    private String numberOfPages;
     private int searchPriority = Integer.MAX_VALUE; // Yüksek bir başlangıç değeri
     //CONSTRUCTOR
-    public Book(String coverImagePath, String title, String subtitle, List<String> authors, List<String> translators,
+    public Book(String cover, String title, String subtitle, List<String> authors, List<String> translators,
                 String isbn, String publisher, String date, String edition,
-                String cover, String language, double rating, List<String> tags) {
-        this.coverImagePath = coverImagePath;
+                String coverType, String language, double rating, List<String> tags,String numberOfPages) {
+
+        this.cover=cover;
         this.title = title;
         this.subtitle = subtitle;
         this.authors = authors;
@@ -35,14 +37,15 @@ public class Book {
         this.publisher = publisher;
         this.date = date;
         this.edition = edition;
-        this.cover = cover;
+        this.coverType = coverType;
         this.language = language;
         this.rating = rating;
         this.tags = tags;
+        this.numberOfPages = numberOfPages;
     }
 
     public static Book fromJSON(JSONObject json) {
-        String coverImagePath = json.optString("coverImagePath", null);
+        String cover = json.optString("cover", "src/coverImages");
         String title = json.getString("title");
         String subtitle = json.optString("subtitle", "");
         List<String> authors = json.getJSONArray("authors").toList().stream()
@@ -55,19 +58,20 @@ public class Book {
         String publisher = json.getString("publisher");
         String date = json.getString("date");
         String edition = json.optString("edition", "");
-        String cover = json.getString("cover");
+        String coverType = json.getString("coverType");
         String language = json.getString("language");
         double rating = json.optDouble("rating", 0.0);
         List<String> tags = json.getJSONArray("tags").toList().stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
+        String numberOfPages = json.getString("numberOfPages");
 
-        return new Book(coverImagePath,title, subtitle, authors, translators, isbn, publisher, date, edition, cover, language, rating, tags);
+        return new Book(cover,title, subtitle, authors, translators, isbn, publisher, date, edition, coverType, language, rating, tags,numberOfPages);
     }
 
     //GETTER & SETTER
-    public String getCoverImagePath() {return coverImagePath;}
-    public void setCoverImagePath(String coverImagePath) {this.coverImagePath = coverImagePath;}
+    public String getCover() {return cover;}
+    public void setCover (String cover) {this.cover = cover;}
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getSubtitle() { return subtitle; }
@@ -84,14 +88,16 @@ public class Book {
     public void setDate(String date) { this.date = date; }
     public String getEdition() { return edition; }
     public void setEdition(String edition) { this.edition = edition; }
-    public String getCover() { return cover; }
-    public void setCover(String cover) { this.cover = cover; }
+    public String getCoverType() { return coverType; }
+    public void setCoverType(String coverType) { this.cover = coverType; }
     public String getLanguage() { return language; }
     public void setLanguage(String language) { this.language = language; }
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
+    public String getNumberOfPages(){return numberOfPages;}
+    public void  setNumberOfPages(String numberOfPages){this.numberOfPages=numberOfPages;}
     public int getSearchPriority() {return searchPriority;}
     public void setSearchPriority(int searchPriority) {this.searchPriority = searchPriority;}
 }

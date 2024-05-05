@@ -3,7 +3,6 @@ package com.example.bookcatalog;
 //JavaFX arayüz tasarımları için gerekli importlar:
 
 import javafx.application.Application;
-import javafx.application.HostServices;
 import javafx.application.Platform; // Layoutlar arası geçişlerin güzel olması için
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -17,7 +16,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -38,11 +36,9 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 // Veri yönetimi için yardımcı importlar:
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
+
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,9 +102,10 @@ public class GUI extends Application {
         }
     }
     private boolean isValidISBN(String isbn) {
-        // Sayısal karakterler ve ISBN-10 için sonunda 'X' olabilir
-        return Pattern.matches("^[0-9Xx]+$", isbn);
+        // Sayısal karakterler, kısa çizgiler ve ISBN-10 için sonunda 'X' olabilir
+        return Pattern.matches("^[0-9Xx-]+$", isbn);
     }
+
 
     private void processFile(Path path) {
         if (Files.exists(path)) {
@@ -170,6 +167,8 @@ public class GUI extends Application {
                 JSONObject jsonObject = (JSONObject) item;
                 String isbn = jsonObject.optString("isbn", "unknown");
                 Path newFilePath = directoryPath.resolve(isbn + ".json");
+
+                copyImageIfAvailable(isbn, jsonArrayPath.getParent());
                 try {
                     if (!Files.exists(newFilePath)) {
                         Files.writeString(newFilePath, jsonObject.toString());
@@ -181,10 +180,13 @@ public class GUI extends Application {
                     System.out.println("Failed to write JSON file for ISBN: " + isbn);
                 }
             });
-
-            Files.deleteIfExists(tempPath);
-            System.out.println("Deleted JSON Array file: " + tempPath);
-            System.out.println("Conversion process successfully!");
+            try {
+            Files.deleteIfExists(directoryPath);
+            System.out.println("Deleted JSON Array file: " + directoryPath);
+            System.out.println("Conversion process successfully!");}
+            catch (IOException ee){
+                System.out.println("Not deleting json array due to importing...");
+            }
 
             //Oluşturulan yeni json objeleri table a eklemek için table ı sıfırlayıp tekrar loadlıyoz.
             Platform.runLater(() -> {
@@ -213,11 +215,11 @@ public class GUI extends Application {
             System.out.println("Book file copied to 'books' directory with ISBN as filename: " + destinationPath);
         }
 
-        String coverImagePath = json.optString("coverImagePath", "src/coverImages/default_image.jpg");
+        String coverImagePath = json.optString("cover", "src/coverImages/default_image.jpg");
         Path coverImagePathFile = Paths.get(coverImagePath);
         if (!Files.exists(coverImagePathFile)) {
             System.out.println("Cover image file not found at: " + coverImagePath + ", using default image.");
-            json.put("coverImagePath", "src/coverImages/default_image.jpg");
+            json.put("cover", "src/coverImages/default_image.jpg");
             needsUpdate = true;
         }
 
@@ -274,7 +276,7 @@ public class GUI extends Application {
         if (!json.has("cover")) {
             System.out.println("Couldn't find the 'cover' key at: "+path);
             System.out.println("Creating as blank... ");
-            json.put("cover", "");
+            json.put("cover", "src/coverImages");
             needsUpdate = true;
         }
         if (!json.has("language")) {
@@ -294,6 +296,18 @@ public class GUI extends Application {
             System.out.println("Creating as blank... ");
             json.put("rating","");
             needsUpdate=true;
+        }
+        if(!json.has("coverType")){
+            System.out.println("Couldn't find the 'coverType' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("coverType","");
+            needsUpdate=true;
+        }
+        if (!json.has("numberOfPages")) {
+            System.out.println("Couldn't find the 'numberOfPages' key at: "+path);
+            System.out.println("Creating as blank... ");
+            json.put("numberOfPages", "");
+            needsUpdate = true;
         }
 
         // Rating çevrim kontrolü ve varsayılan değer atama
@@ -354,19 +368,20 @@ public class GUI extends Application {
                 JSONArray jsonArray = new JSONArray();
                 tableView.getSelectionModel().getSelectedItems().forEach(book -> {
                     JSONObject jsonObj = new JSONObject();
-                    jsonObj.put("date", book.getDate());
                     jsonObj.put("isbn", book.getIsbn());
+                    jsonObj.put("title", book.getTitle());
+                    jsonObj.put("date", book.getDate());
                     jsonObj.put("rating", book.getRating());
                     jsonObj.put("edition", book.getEdition());
                     jsonObj.put("language", book.getLanguage());
-                    jsonObj.put("title", book.getTitle());
                     jsonObj.put("tags", new JSONArray(book.getTags()));
-                    jsonObj.put("cover", book.getCover());
+                    jsonObj.put("coverType", book.getCoverType());
                     jsonObj.put("translators", new JSONArray(book.getTranslators()));
                     jsonObj.put("subtitle", book.getSubtitle());
-                    jsonObj.put("coverImagePath", book.getCoverImagePath());
+                    jsonObj.put("cover", book.getCover());
                     jsonObj.put("publisher", book.getPublisher());
                     jsonObj.put("authors", new JSONArray(book.getAuthors()));
+                    jsonObj.put("numberOfPages", book.getNumberOfPages());
 
                     jsonArray.put(jsonObj);
 
@@ -382,6 +397,22 @@ public class GUI extends Application {
             }
         }
     }
+
+    private void copyImageIfAvailable(String isbn, Path sourceDir) {
+        Path imageFilePath = sourceDir.resolve(isbn + ".jpg");
+        Path destinationImagePath = Paths.get("src/coverImages", isbn + ".jpg");
+
+        try {
+            if (Files.exists(imageFilePath) && !Files.exists(destinationImagePath)) {
+                Files.copy(imageFilePath, destinationImagePath, StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("Cover image for ISBN " + isbn + " copied successfully to 'src/coverImages'.");
+            }
+        } catch (IOException e) {
+            System.out.println("Failed to copy cover image for ISBN: " + isbn);
+            e.printStackTrace();
+        }
+    }
+
 
     private void copyCoverImage(String isbn, String destinationDir) {
         Path sourcePath = Paths.get("src/coverImages/" + isbn + ".jpg");
@@ -499,13 +530,6 @@ public class GUI extends Application {
         }
     }
 
-
-
-
-
-
-
-
     @Override
     public void start(Stage stage) {
         System.out.println(" "); System.out.println(" ");
@@ -617,10 +641,13 @@ public class GUI extends Application {
 
             if (selectedFiles != null) {
                 selectedFiles.forEach(file -> {
+
+
                     Path path = file.toPath();
                     processFile(path);
 
-                    // Resim dosyasını kontrol et ve kopyala
+
+                    // Resim dosyasını kontrol et ve varsa kopyala
                     try {
                         String jsonContent = Files.readString(path);
                         JSONObject jsonObject = new JSONObject(jsonContent);
@@ -700,27 +727,28 @@ public class GUI extends Application {
         TableColumn<Book, String> publisherColumn = createColumn("Publisher", Book::getPublisher);
         TableColumn<Book, String> publicationDateColumn = createColumn("Publication Date", Book::getDate);
         TableColumn<Book, String> editionColumn = createColumn("Edition", Book::getEdition);
-        TableColumn<Book, String> coverColumn = createColumn("Cover", Book::getCover);
+        TableColumn<Book, String> coverTypeColumn = createColumn("Cover Type", Book::getCoverType);
         TableColumn<Book, String> languageColumn = createColumn("Language", Book::getLanguage);
         TableColumn<Book, String> ratingColumn = createColumn("Rating",
                 book -> String.format("%.1f", book.getRating())); //double problem yarattığı için String formatına çevirdik.
         TableColumn<Book, String> tagsColumn = createColumnForList("Tags", Book::getTags);
+        TableColumn<Book, String> numberOfPagesColumn = createColumn("Page Count", Book::getNumberOfPages);
 
 
 
         //THE CODE FOR ALL TABLE ELEMENTS FITS IN LAYOUT
         TableColumn<?, ?>[] columns = {
                 titleColumn, subtitleColumn, authorsColumn, translatorsColumn, isbnColumn, publisherColumn,
-                publicationDateColumn, editionColumn, coverColumn, languageColumn, ratingColumn, tagsColumn
+                publicationDateColumn, editionColumn, coverTypeColumn, languageColumn, ratingColumn, tagsColumn,numberOfPagesColumn
         };
-        editColumnWidths(bookTable, columns, 0.083);
+        editColumnWidths(bookTable, columns, 0.0769);
 
 
         //COLUMN CREATION
         bookTable.getColumns().addAll(
                 titleColumn, subtitleColumn, authorsColumn, translatorsColumn,
                 isbnColumn, publisherColumn, publicationDateColumn, editionColumn,
-                coverColumn, languageColumn, ratingColumn, tagsColumn
+                coverTypeColumn, languageColumn, ratingColumn, tagsColumn, numberOfPagesColumn
         );
 
 
@@ -1033,9 +1061,10 @@ public class GUI extends Application {
                     boolean matchesRating = String.valueOf(book.getRating()).contains(searchText);
                     boolean matchesDate = book.getDate() != null && book.getDate().toLowerCase().contains(searchText);
                     boolean matchesLanguage = book.getLanguage() != null && book.getLanguage().toLowerCase().contains(searchText);
-                    boolean matchesCover = book.getCover() != null && book.getCover().toLowerCase().contains(searchText);
+                    boolean matchesCoverType = book.getCoverType() != null && book.getCoverType().toLowerCase().contains(searchText);
                     boolean matchesEdition = book.getEdition() != null && book.getEdition().toLowerCase().contains(searchText);
                     boolean matchesTags = book.getTags() != null && book.getTags().stream().anyMatch(tag -> tag.toLowerCase().contains(searchText));
+                    boolean matchesNumberOfPages = book.getNumberOfPages() != null && book.getNumberOfPages().toLowerCase().contains(searchText);
 
                     //Tablomuzda soldan sağa doğru olan sıralamayı öncelikte de aynı şekilde kullandık.
                     if (matchesTitle) {
@@ -1057,7 +1086,7 @@ public class GUI extends Application {
                     }
                 else if (matchesEdition) {
                         book.setSearchPriority(8);
-                    }  else if (matchesCover) {
+                    }  else if (matchesCoverType) {
                         book.setSearchPriority(9);
                     }
                     else if (matchesLanguage) {
@@ -1068,7 +1097,11 @@ public class GUI extends Application {
                     }
                     else if (matchesTags) {
                         book.setSearchPriority(12);
-                    }else {
+                    }
+                    else if(matchesNumberOfPages){
+                        book.setSearchPriority(13);
+                    }
+                    else{
                         book.setSearchPriority(Integer.MAX_VALUE); // No match
                         clearButton.setVisible(true);
                         return false;
