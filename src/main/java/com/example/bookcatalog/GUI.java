@@ -215,11 +215,11 @@ public class GUI extends Application {
             System.out.println("Book file copied to 'books' directory with ISBN as filename: " + destinationPath);
         }
 
-        String coverImagePath = json.optString("cover", "src/coverImages/default_image.jpg");
+        String coverImagePath = json.optString("cover", "src/coverImages/");
         Path coverImagePathFile = Paths.get(coverImagePath);
         if (!Files.exists(coverImagePathFile)) {
             System.out.println("Cover image file not found at: " + coverImagePath + ", using default image.");
-            json.put("cover", "src/coverImages/default_image.jpg");
+            json.put("cover", "");
             needsUpdate = true;
         }
 
@@ -725,7 +725,7 @@ public class GUI extends Application {
                 titleColumn, subtitleColumn, authorsColumn, translatorsColumn, isbnColumn, publisherColumn,
                 publicationDateColumn, editionColumn, languageColumn, ratingColumn, tagsColumn
         };
-        editColumnWidths(bookTable, columns, 0.0769);
+        editColumnWidths(bookTable, columns, 0.0905);
 
 
         //COLUMN CREATION

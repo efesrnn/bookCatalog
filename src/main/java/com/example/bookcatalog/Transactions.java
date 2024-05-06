@@ -324,6 +324,10 @@ public class Transactions {
 
 
                     JSONObject bookJson = new JSONObject();
+
+                    if(coverImagePath==null || coverImagePath=="src/coverImages/default_image.jpg"){
+                        bookJson.put("cover","");
+                    }
                     bookJson.put("cover", coverImagePath);
                     bookJson.put("title", title);
                     bookJson.put("subtitle", subtitle);
@@ -624,13 +628,19 @@ public class Transactions {
             final String newISBNPath = "src/coverImages/" + isbn + ".jpg";
 
 // Bu yolları işlemlerimizde kullandık ve yakalandıktan sonra üzerlerinde değişiklik yapılmadığından emin olduk.
-            if (localCoverImagePath != null) {
+            if (localCoverImagePath != null || localCoverImagePath !="src/coverImages/default_image.jpg") {
                 try {
                     Path sourcePath = Paths.get(localCoverImagePath);
                     Path targetPath = Paths.get(currentISBNPath);
                     Files.createDirectories(targetPath.getParent()); //Directory'nin var olduğundan emin olduk ki herhangi bir hatayla karşılaşılmasın.
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    userInput.put("cover", targetPath.toString());
+
+                    String jsonFilePath = "books/" + selectedBook.getIsbn() + ".json";
+                    Path jsonPath = Paths.get(jsonFilePath);
+                    JSONObject bookJson = new JSONObject(Files.readString(jsonPath, StandardCharsets.UTF_8));
+                    bookJson.put("cover", targetPath.toString());  // Cover değerini boş olarak ayarla
+                    Files.writeString(jsonPath, bookJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); // Güncellenmiş JSON'ı yaz
+                    System.out.println("Cover key in JSON updated to isbn after file edition.");
                 } catch (NoSuchFileException ex2){
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Image Successfully removed. " + ex2.getMessage());
                     alert.showAndWait();
@@ -723,6 +733,16 @@ public class Transactions {
                 }
                 if (!fileDeleted) {
                     System.out.println("No cover image file found to delete.");
+                    JSONObject json =new JSONObject();
+                }
+                else {
+                    // Eğer dosya silindi ise, JSON dosyasındaki cover bilgisini güncelle
+                    String jsonFilePath = "books/" + selectedBook.getIsbn() + ".json";
+                    Path jsonPath = Paths.get(jsonFilePath);
+                    JSONObject bookJson = new JSONObject(Files.readString(jsonPath, StandardCharsets.UTF_8));
+                    bookJson.put("cover", "");  // Cover değerini boş olarak ayarla
+                    Files.writeString(jsonPath, bookJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); // Güncellenmiş JSON'ı yaz
+                    System.out.println("Cover key in JSON updated to empty after file deletion.");
                 }
             } catch (IOException ex) {
                 System.err.println("Failed to delete the cover image file: " + ex.getMessage());
