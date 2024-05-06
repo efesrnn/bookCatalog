@@ -59,7 +59,6 @@ public class Book {
         List<String> tags = json.getJSONArray("tags").toList().stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
-        String numberOfPages = json.getString("numberOfPages");
 
         return new Book(cover,title, subtitle, authors, translators, isbn, publisher, date, edition, language, rating, tags);
     }
