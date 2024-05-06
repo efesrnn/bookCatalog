@@ -246,7 +246,7 @@ public class Transactions {
             }
 
 
-            if (isbn.matches("^[0-9Xx-]+$")) {
+            if (!isbn.matches("^[0-9Xx-]+$")) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "ISBN must be a 10 or 13-digit numeric value.");
                 alert.showAndWait();
                 return;
