@@ -297,18 +297,6 @@ public class GUI extends Application {
             json.put("rating","");
             needsUpdate=true;
         }
-        if(!json.has("coverType")){
-            System.out.println("Couldn't find the 'coverType' key at: "+path);
-            System.out.println("Creating as blank... ");
-            json.put("coverType","");
-            needsUpdate=true;
-        }
-        if (!json.has("numberOfPages")) {
-            System.out.println("Couldn't find the 'numberOfPages' key at: "+path);
-            System.out.println("Creating as blank... ");
-            json.put("numberOfPages", "");
-            needsUpdate = true;
-        }
 
         // Rating çevrim kontrolü ve varsayılan değer atama
         if (json.has("rating")) {
@@ -375,13 +363,11 @@ public class GUI extends Application {
                     jsonObj.put("edition", book.getEdition());
                     jsonObj.put("language", book.getLanguage());
                     jsonObj.put("tags", new JSONArray(book.getTags()));
-                    jsonObj.put("coverType", book.getCoverType());
                     jsonObj.put("translators", new JSONArray(book.getTranslators()));
                     jsonObj.put("subtitle", book.getSubtitle());
                     jsonObj.put("cover", book.getCover());
                     jsonObj.put("publisher", book.getPublisher());
                     jsonObj.put("authors", new JSONArray(book.getAuthors()));
-                    jsonObj.put("numberOfPages", book.getNumberOfPages());
 
                     jsonArray.put(jsonObj);
 
@@ -727,19 +713,17 @@ public class GUI extends Application {
         TableColumn<Book, String> publisherColumn = createColumn("Publisher", Book::getPublisher);
         TableColumn<Book, String> publicationDateColumn = createColumn("Publication Date", Book::getDate);
         TableColumn<Book, String> editionColumn = createColumn("Edition", Book::getEdition);
-        TableColumn<Book, String> coverTypeColumn = createColumn("Cover Type", Book::getCoverType);
         TableColumn<Book, String> languageColumn = createColumn("Language", Book::getLanguage);
         TableColumn<Book, String> ratingColumn = createColumn("Rating",
                 book -> String.format("%.1f", book.getRating())); //double problem yarattığı için String formatına çevirdik.
         TableColumn<Book, String> tagsColumn = createColumnForList("Tags", Book::getTags);
-        TableColumn<Book, String> numberOfPagesColumn = createColumn("Page Count", Book::getNumberOfPages);
 
 
 
         //THE CODE FOR ALL TABLE ELEMENTS FITS IN LAYOUT
         TableColumn<?, ?>[] columns = {
                 titleColumn, subtitleColumn, authorsColumn, translatorsColumn, isbnColumn, publisherColumn,
-                publicationDateColumn, editionColumn, coverTypeColumn, languageColumn, ratingColumn, tagsColumn,numberOfPagesColumn
+                publicationDateColumn, editionColumn, languageColumn, ratingColumn, tagsColumn
         };
         editColumnWidths(bookTable, columns, 0.0769);
 
@@ -748,7 +732,7 @@ public class GUI extends Application {
         bookTable.getColumns().addAll(
                 titleColumn, subtitleColumn, authorsColumn, translatorsColumn,
                 isbnColumn, publisherColumn, publicationDateColumn, editionColumn,
-                coverTypeColumn, languageColumn, ratingColumn, tagsColumn, numberOfPagesColumn
+                languageColumn, ratingColumn, tagsColumn
         );
 
 
@@ -1061,10 +1045,8 @@ public class GUI extends Application {
                     boolean matchesRating = String.valueOf(book.getRating()).contains(searchText);
                     boolean matchesDate = book.getDate() != null && book.getDate().toLowerCase().contains(searchText);
                     boolean matchesLanguage = book.getLanguage() != null && book.getLanguage().toLowerCase().contains(searchText);
-                    boolean matchesCoverType = book.getCoverType() != null && book.getCoverType().toLowerCase().contains(searchText);
                     boolean matchesEdition = book.getEdition() != null && book.getEdition().toLowerCase().contains(searchText);
                     boolean matchesTags = book.getTags() != null && book.getTags().stream().anyMatch(tag -> tag.toLowerCase().contains(searchText));
-                    boolean matchesNumberOfPages = book.getNumberOfPages() != null && book.getNumberOfPages().toLowerCase().contains(searchText);
 
                     //Tablomuzda soldan sağa doğru olan sıralamayı öncelikte de aynı şekilde kullandık.
                     if (matchesTitle) {
@@ -1086,20 +1068,15 @@ public class GUI extends Application {
                     }
                 else if (matchesEdition) {
                         book.setSearchPriority(8);
-                    }  else if (matchesCoverType) {
-                        book.setSearchPriority(9);
                     }
                     else if (matchesLanguage) {
-                        book.setSearchPriority(10);
+                        book.setSearchPriority(9);
                     }
                     else if (matchesRating) {
-                        book.setSearchPriority(11);
+                        book.setSearchPriority(10);
                     }
                     else if (matchesTags) {
-                        book.setSearchPriority(12);
-                    }
-                    else if(matchesNumberOfPages){
-                        book.setSearchPriority(13);
+                        book.setSearchPriority(11);
                     }
                     else{
                         book.setSearchPriority(Integer.MAX_VALUE); // No match

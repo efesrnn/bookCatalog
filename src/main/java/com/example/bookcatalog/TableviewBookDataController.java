@@ -26,8 +26,6 @@ public class TableviewBookDataController {
     @FXML
     private Label editionLabel;
     @FXML
-    private Label coverTypeLabel;
-    @FXML
     private Label languageLabel;
     @FXML
     private Label ratingLabel;
@@ -61,7 +59,6 @@ public class TableviewBookDataController {
         publisherLabel.setText(book.getPublisher());
         dateLabel.setText(book.getDate());
         editionLabel.setText(book.getEdition());
-        coverTypeLabel.setText(book.getCoverType());
         languageLabel.setText(book.getLanguage());
         ratingLabel.setText(String.format("%.2f", book.getRating()));
         tagsLabel.setText(String.join(", ", book.getTags()));

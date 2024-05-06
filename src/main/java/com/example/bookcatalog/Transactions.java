@@ -202,7 +202,7 @@ public class Transactions {
         //Bütün kitap dataları için yeni Map kullanıyoruz.
 
         Map<String, TextField> fieldMap = new HashMap<>();
-        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover Type", "Language", "Rating", "Tags","Page Count"};
+        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Language", "Rating", "Tags"};
 
 
         //A LOOP TO CREATE ALL LABELS AND TEXTFIELDS IN ORDER
@@ -315,10 +315,9 @@ public class Transactions {
                     String publisher = fieldMap.get("Publisher").getText();
                     String date = fieldMap.get("Date").getText();
                     String edition = fieldMap.get("Edition").getText();
-                    String coverType = fieldMap.get("Cover Type").getText();
                     String language = fieldMap.get("Language").getText();
                     List<String> tags = Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"));
-                    String numberOfPages =fieldMap.get("Page Count").getText();
+
 
 
                     //CREATING THE JSON FILE VIA INFO WE GET FROM TEXT FIELDS
@@ -334,11 +333,9 @@ public class Transactions {
                     bookJson.put("publisher", publisher);
                     bookJson.put("date", date);
                     bookJson.put("edition", edition);
-                    bookJson.put("coverType", coverType);
                     bookJson.put("language", language);
                     bookJson.put("rating", rating);
                     bookJson.put("tags", new JSONArray(tags));
-                    bookJson.put("numberOfPages",numberOfPages);
 
 
 
@@ -350,7 +347,7 @@ public class Transactions {
 
                     //UPDATING THE BOOK TABLE -TABLEVIEW-
                     Book newBook = new Book(coverImagePath,title, subtitle, authors, translators, isbn, publisher, date,
-                            edition, coverType, language, rating, tags,numberOfPages);
+                            edition, language, rating, tags);
 
                     Platform.runLater(() -> booksData.add(newBook));
 
@@ -430,11 +427,9 @@ public class Transactions {
         selectedBook.setPublisher(updatedJson.getString("publisher"));
         selectedBook.setDate(updatedJson.getString("date"));
         selectedBook.setEdition(updatedJson.getString("edition"));
-        selectedBook.setCoverType(updatedJson.getString("coverType"));
         selectedBook.setLanguage(updatedJson.getString("language"));
         selectedBook.setRating(updatedJson.getDouble("rating"));
         selectedBook.setTags(Arrays.asList(updatedJson.getJSONArray("tags").toList().toArray(new String[0])));
-        selectedBook.setNumberOfPages(updatedJson.getString("numberOfPages"));
 
         Platform.runLater(() -> {
             System.out.println(selectedBook.getTitle()+ " (ISBN: " + selectedBook.getIsbn() + ") has changed.");
@@ -471,7 +466,7 @@ public class Transactions {
         bookInfoEnteringField.setPadding(new Insets(20, 40, 20, 40));
 
         Map<String, TextField> fieldMap = new HashMap<>();
-        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Cover Type", "Language", "Rating", "Tags","Page Count"};
+        String[] fieldNames = {"Title", "Subtitle", "Authors", "Translators", "ISBN", "Publisher", "Date", "Edition", "Language", "Rating", "Tags"};
 
         // CREATE EACH ATTRIBUTE'S LABEL AND TEXT FIELD BY LOOP
         for (String fieldName : fieldNames) {
@@ -504,9 +499,6 @@ public class Transactions {
                 case "Edition":
                     textField.setText(selectedBook.getEdition());
                     break;
-                case "Cover Type":
-                    textField.setText(selectedBook.getCoverType());
-                    break;
                 case "Language":
                     textField.setText(selectedBook.getLanguage());
                     break;
@@ -515,9 +507,6 @@ public class Transactions {
                     break;
                 case "Tags":
                     textField.setText(String.join(", ", selectedBook.getTags()));
-                    break;
-                case "Page Count":
-                    textField.setText(selectedBook.getNumberOfPages());
                     break;
             }
 
@@ -592,11 +581,9 @@ public class Transactions {
             userInput.put("publisher", fieldMap.get("Publisher").getText());
             userInput.put("date", fieldMap.get("Date").getText());
             userInput.put("edition", fieldMap.get("Edition").getText());
-            userInput.put("coverType", fieldMap.get("Cover Type").getText());
             userInput.put("language", fieldMap.get("Language").getText());
             userInput.put("rating", rating);
             userInput.put("tags", new JSONArray(Arrays.asList(fieldMap.get("Tags").getText().split(",\\s*"))));
-            userInput.put("numberOfPages", fieldMap.get("Page Count").getText());
 
             // Lambda dışında yolları tanımlayıp hesapladık.
 
