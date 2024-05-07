@@ -593,26 +593,40 @@ public class Transactions {
 
 
 
+            // Dosya yolu oluşturma ve kontrol etme
             String directoryPath = "books";
-            String filePath = directoryPath + "/" + isbn + ".json";
+            String newFilePath = directoryPath + "/" + newIsbn + ".json";
+            String oldFilePath = directoryPath + "/" + oldIsbn + ".json";
+
+            Path newPath = Paths.get(newFilePath);
+            Path oldPath = Paths.get(oldFilePath);
 
             try {
                 Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
-                Path path = Paths.get(filePath);
-                JSONObject existingJson = new JSONObject(readJsonFile(path));
-                System.out.println("Json and entered data successfully compared.");
-                updateBookDetails(existingJson, userInput);
+                boolean isNewIsbnDifferent = !newIsbn.equals(oldIsbn);
+                if (isNewIsbnDifferent && Files.exists(newPath)) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
+                    alert.showAndWait();
+                    return;
+                }
 
-                Files.writeString(path, existingJson.toString(), StandardOpenOption.TRUNCATE_EXISTING); //Bu satırda, mevcut JSON verilerini dosyaya yazarak mevcut içeriği değiştiriyoruz.
-                System.out.println("Successfully updated: " + path);
+                JSONObject existingJson = new JSONObject(isNewIsbnDifferent ? "{}" : readJsonFile(oldPath));
+                updateBookDetails(existingJson, userInput);
+                Files.writeString(newPath, existingJson.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+                if (isNewIsbnDifferent) {
+                    Files.deleteIfExists(oldPath); // Eski dosyayı sil
+                }
+
+                System.out.println("Successfully updated: " + newPath);
                 updateObservableList(selectedBook, existingJson);
                 Platform.runLater(() -> GUI.bookTable.refresh());
             } catch (IOException ex) {
                 ex.printStackTrace();
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update the book: " + ex.getMessage());
-                System.out.println("ISBN match Error! Do not change ISBN manually in text editor.");
                 alert.showAndWait();
             }
+
             stage.setScene(mainScene);
         });
 

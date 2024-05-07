@@ -1,1 +1,1 @@
-{"date":"2023-02-20","isbn":"0987654321","rating":3.8,"edition":"","language":"French","title":"Second Book","tags":["literature","novel"],"cover":"src/coverImages","coverType":"","translators":[],"numberOfPages":"","subtitle":"","publisher":"Beta Publishers","authors":["Bob Smith"]}
+{"date":"2023-02-20","cover":"src/coverImages","translators":[],"isbn":"0987654321","subtitle":"","rating":3.8,"edition":"","publisher":"Beta Publishers","language":"French","title":"Second Book","tags":["literature","novel"],"authors":["Bob Smith"]}

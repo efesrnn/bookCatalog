@@ -1,1 +1,1 @@
-{"date":"2022-12-15","isbn":"1234567890","rating":4,"edition":"","language":"English","title":"First Book","tags":["science","technology"],"cover":"src/coverImages","coverType":"","translators":[],"numberOfPages":"","subtitle":"","publisher":"Alpha Publishing","authors":["Alice Johnson"]}
+{"date":"2022-12-15","cover":"src/coverImages","translators":[],"isbn":"1234567890","subtitle":"","rating":4,"edition":"","publisher":"Alpha Publishing","language":"English","title":"First Book","tags":["science","technology"],"authors":["Alice Johnson"]}
