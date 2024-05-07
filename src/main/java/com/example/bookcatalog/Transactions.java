@@ -595,14 +595,20 @@ public class Transactions {
 
             // Dosya yolu oluşturma ve kontrol etme
             String directoryPath = "books";
+            String imageDirectory = "src/coverImages";
             String newFilePath = directoryPath + "/" + newIsbn + ".json";
             String oldFilePath = directoryPath + "/" + oldIsbn + ".json";
+            String oldImagePath = imageDirectory + "/" + oldIsbn + ".jpg";
+            String newImagePath = imageDirectory + "/" + newIsbn + ".jpg";
 
             Path newPath = Paths.get(newFilePath);
             Path oldPath = Paths.get(oldFilePath);
+            Path oldImgPath = Paths.get(oldImagePath);
+            Path newImgPath = Paths.get(newImagePath);
 
             try {
                 Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
+                Files.createDirectories(Paths.get(imageDirectory)); // Resim directory'sini kontrol et
                 boolean isNewIsbnDifferent = !newIsbn.equals(oldIsbn);
                 if (isNewIsbnDifferent && Files.exists(newPath)) {
                     Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
@@ -616,6 +622,11 @@ public class Transactions {
 
                 if (isNewIsbnDifferent) {
                     Files.deleteIfExists(oldPath); // Eski dosyayı sil
+
+                    // Kapak resmi ismini güncelle
+                    if (Files.exists(oldImgPath)) {
+                        Files.move(oldImgPath, newImgPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
                 }
 
                 System.out.println("Successfully updated: " + newPath);
@@ -634,6 +645,12 @@ public class Transactions {
         Button removeImageButton = new Button("Remove Image");
 
         selectImageButton.setOnAction(e -> {
+            if (!selectedBook.getIsbn().equals(fieldMap.get("ISBN").getText().trim())) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "ISBN and coverImage change actions cannot be applied at the same time. Please do it separately");
+                alert.showAndWait();
+                return;
+            }
+
             String isbn = fieldMap.get("ISBN").getText();
             Map<String, Object> userInput = new HashMap<>();
 
@@ -668,24 +685,38 @@ public class Transactions {
 
             if (!selectedBook.getIsbn().equals(isbn)) {  // ISBN'in değişip değişmediğini kontrol ediyoruz.
                 try {
+                    // JSON dosyaları için eski ve yeni yolları belirle
                     Path oldJsonPath = Paths.get("books", selectedBook.getIsbn() + ".json");
                     Path newJsonPath = Paths.get("books", isbn + ".json");
-                    Files.move(oldJsonPath, newJsonPath, StandardCopyOption.REPLACE_EXISTING);
-
-                    Path oldImagePath = Paths.get(currentISBNPath);
-                    Path newImagePath = Paths.get(newISBNPath);
-                    if (Files.exists(oldImagePath)) {
-                        Files.move(oldImagePath, newImagePath, StandardCopyOption.REPLACE_EXISTING);
+                    if (!Files.exists(newJsonPath)) { // Yeni ISBN ile dosya yoksa, taşı
+                        Files.move(oldJsonPath, newJsonPath, StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "A file with the new ISBN already exists. Please check the ISBN.");
+                        alert.showAndWait();
+                        return;
                     }
-                    // Dosya taşındıktan sonra yeni oluşacak duruma göre coverImagePath'i güncelledik..
+
+                    // Resim dosyaları için eski ve yeni yolları belirle
+                    Path oldImagePath = Paths.get("src/coverImages", selectedBook.getIsbn() + ".jpg");
+                    Path newImagePath = Paths.get("src/coverImages", isbn + ".jpg");
+                    if (Files.exists(oldImagePath)) {
+                        if (!Files.exists(newImagePath)) { // Yeni ISBN ile resim yoksa, taşı
+                            Files.move(oldImagePath, newImagePath, StandardCopyOption.REPLACE_EXISTING);
+                        } else {
+                            // Yeni ISBN ile bir resim zaten varsa, eski resmi sil veya isim çakışmasını önlemek adına işlem yapma
+                            Files.deleteIfExists(oldImagePath);
+                        }
+                    }
+                    // Dosya taşındıktan sonra yeni oluşacak duruma göre coverImagePath'i güncelledik.
                     coverImagePath[0] = newImagePath.toString();
                 } catch (IOException ex) {
                     ex.printStackTrace();
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update ISBN and image file names.");
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update ISBN and image file names: " + ex.getMessage());
                     alert.showAndWait();
                     return;
                 }
             }
+
 
 
             FileChooser fileChooser = new FileChooser();

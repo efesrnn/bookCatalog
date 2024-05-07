@@ -46,8 +46,8 @@
             <Label text="Edition:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
             <Label fx:id="editionLabel" GridPane.columnIndex="1" GridPane.rowIndex="7" style="-fx-font-size: 16px;"/>
 
-            <Label text="Cover Type:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
-            <Label fx:id="coverTypeLabel" GridPane.columnIndex="1" GridPane.rowIndex="8" style="-fx-font-size: 16px;"/>
+            <Label text="Cover Path:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+            <Label fx:id="coverPathLabel" GridPane.columnIndex="1" GridPane.rowIndex="8" style="-fx-font-size: 16px;"/>
 
             <Label text="Language:" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
             <Label fx:id="languageLabel" GridPane.columnIndex="1" GridPane.rowIndex="9" style="-fx-font-size: 16px;"/>

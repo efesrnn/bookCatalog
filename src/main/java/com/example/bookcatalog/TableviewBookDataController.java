@@ -32,6 +32,8 @@ public class TableviewBookDataController {
     @FXML
     private Label tagsLabel;
     @FXML
+    private Label coverPathLabel;
+    @FXML
     private ImageView coverImageView;
 
     private Stage stage;
@@ -62,6 +64,7 @@ public class TableviewBookDataController {
         languageLabel.setText(book.getLanguage());
         ratingLabel.setText(String.format("%.2f", book.getRating()));
         tagsLabel.setText(String.join(", ", book.getTags()));
+        coverPathLabel.setText(book.getCover());
 
         if (book.getCover() != null && !book.getCover().isEmpty()) {
             // Dosya yolunu doğru şekilde ayarlama
