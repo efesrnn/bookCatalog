@@ -139,7 +139,7 @@ public class Transactions {
 
 // Bu kod bloğuyla, başlangıçta varsayılan bir resmi yüklüyoruz.
         try {
-            File file = new File("src/coverImages/default_image.jpg");
+            File file = new File("coverImages/default_image.jpg");
             if (file.exists()) {
                 Image image = new Image(file.toURI().toString());
                 imageView.setImage(image);
@@ -173,7 +173,7 @@ public class Transactions {
 
         removeImageButton.setOnAction(e -> {
             try {
-                File defaultImageFile = new File("src/coverImages/default_image.jpg");
+                File defaultImageFile = new File("coverImages/default_image.jpg");
                 if (defaultImageFile.exists()) {
                     imageView.setImage(new Image(defaultImageFile.toURI().toString()));
                     coverImagePath = defaultImageFile.getAbsolutePath(); // coverImagePath değişkenini varsayılan resmin path'ine ayarladık.
@@ -263,7 +263,7 @@ public class Transactions {
                     }
 
                     // Klasörün var olduğundan emin olup sonrasında doğru uzantıya sahip hedef yolunu belirliyoruz.
-                    Path targetPath = Paths.get("src/coverImages", isbn + fileExtension);
+                    Path targetPath = Paths.get("coverImages", isbn + fileExtension);
                     Files.createDirectories(targetPath.getParent());
 
                     // Bu kod bloğunun amacı resim dosyasını hedef konuma kopyaladıktan sonra var olan dosyanın üzerine yazdırma işlemi."
@@ -325,7 +325,7 @@ public class Transactions {
 
                     JSONObject bookJson = new JSONObject();
 
-                    if(coverImagePath==null || coverImagePath=="src/coverImages/default_image.jpg"){
+                    if(coverImagePath==null || coverImagePath=="coverImages/default_image.jpg"){
                         bookJson.put("cover","");
                     }
                     bookJson.put("cover", coverImagePath);
@@ -398,7 +398,7 @@ public class Transactions {
         scrollPane.setPadding(new Insets(10));
         scrollPane.setStyle("-fx-background: #f4f4f4; -fx-border-color: #f4f4f4;");
 
-        Scene addBookScene = new Scene(scrollPane, 1200, 1000);
+        Scene addBookScene = new Scene(scrollPane, 1000, 800);
         stage.setScene(addBookScene);
 
     }
@@ -445,6 +445,7 @@ public class Transactions {
     public static void showEditBookSection(Stage stage, Scene mainScene, Book selectedBook) {
         System.out.println("Layout has changed as Edit Section.");
 
+
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(10));
         layout.setAlignment(Pos.TOP_CENTER);
@@ -454,11 +455,11 @@ public class Transactions {
         imageView.setFitWidth(350);
         imageView.setPreserveRatio(true);
 
-        final String[] coverImagePath = {"src/coverImages/" + selectedBook.getIsbn() + ".jpg"};
+        final String[] coverImagePath = {"coverImages/" + selectedBook.getIsbn() + ".jpg"};
         File coverImageFile = new File(coverImagePath[0]);
 
         if (!coverImageFile.exists()) {
-            coverImagePath[0] = "src/coverImages/default_image.jpg";
+            coverImagePath[0] = "coverImages/default_image.jpg";
         }
 
         imageView.setImage(new Image(new File(coverImagePath[0]).toURI().toString()));
@@ -595,7 +596,7 @@ public class Transactions {
 
             // Dosya yolu oluşturma ve kontrol etme
             String directoryPath = "books";
-            String imageDirectory = "src/coverImages";
+            String imageDirectory = "coverImages";
             String newFilePath = directoryPath + "/" + newIsbn + ".json";
             String oldFilePath = directoryPath + "/" + oldIsbn + ".json";
             String oldImagePath = imageDirectory + "/" + oldIsbn + ".jpg";
@@ -661,11 +662,11 @@ public class Transactions {
             Map<String, Object> userInput = new HashMap<>();
 
             final String localCoverImagePath = coverImagePath[0]; // coverImagePath'in güncel halini tutuyoruz.
-            final String currentISBNPath = "src/coverImages/" + selectedBook.getIsbn() + ".jpg";
-            final String newISBNPath = "src/coverImages/" + isbn + ".jpg";
+            final String currentISBNPath = "coverImages/" + selectedBook.getIsbn() + ".jpg";
+            final String newISBNPath = "coverImages/" + isbn + ".jpg";
 
 // Bu yolları işlemlerimizde kullandık ve yakalandıktan sonra üzerlerinde değişiklik yapılmadığından emin olduk.
-            if (localCoverImagePath != null || localCoverImagePath !="src/coverImages/default_image.jpg") {
+            if (localCoverImagePath != null || localCoverImagePath !="coverImages/default_image.jpg") {
                 try {
                     Path sourcePath = Paths.get(localCoverImagePath);
                     Path targetPath = Paths.get(currentISBNPath);
@@ -703,8 +704,8 @@ public class Transactions {
                     }
 
                     // Resim dosyaları için eski ve yeni yolları belirle
-                    Path oldImagePath = Paths.get("src/coverImages", selectedBook.getIsbn() + ".jpg");
-                    Path newImagePath = Paths.get("src/coverImages", isbn + ".jpg");
+                    Path oldImagePath = Paths.get("coverImages", selectedBook.getIsbn() + ".jpg");
+                    Path newImagePath = Paths.get("coverImages", isbn + ".jpg");
                     if (Files.exists(oldImagePath)) {
                         if (!Files.exists(newImagePath)) { // Yeni ISBN ile resim yoksa, taşı
                             Files.move(oldImagePath, newImagePath, StandardCopyOption.REPLACE_EXISTING);
@@ -735,7 +736,7 @@ public class Transactions {
                 try {
                     Path sourcePath = selectedFile.toPath();
                     String fileName = selectedBook.getIsbn() + getFileExtension(selectedFile.getName());
-                    Path targetPath = Paths.get("src/coverImages", fileName);
+                    Path targetPath = Paths.get("coverImages", fileName);
                     if (Files.notExists(targetPath)) {
                         Files.createFile(targetPath);  // Yeni dosya oluştur
                     }
@@ -763,18 +764,18 @@ public class Transactions {
         removeImageButton.setOnAction(e -> {
             try {
                 // Varsayılan resmin path'ini tanımlama
-                File defaultImageFile = new File("src/coverImages/default_image.jpg");
+                File defaultImageFile = new File("coverImages/default_image.jpg");
                 if (defaultImageFile.exists()) {
                     imageView.setImage(new Image(defaultImageFile.toURI().toString()));
                 } else {
                     System.err.println("Default image file not found.");
                 }
 
-                // Çeşitli uzantılara sahip kapak görseli dosyasının silinmesini denemek.
+                // Çeşitli uzantılara sahip kapak görseli dosyasının silinmesini deneme.
                 String[] possibleExtensions = {".jpg",};
                 boolean fileDeleted = false;
                 for (String extension : possibleExtensions) {
-                    File currentCoverImageFile = new File("src/coverImages/" + selectedBook.getIsbn() + extension);
+                    File currentCoverImageFile = new File("coverImages/" + selectedBook.getIsbn() + extension);
                     if (currentCoverImageFile.exists()) {
                         Files.delete(currentCoverImageFile.toPath());  // Geçerli kapak resmi dosyasını sildik.
                         System.out.println("Cover image file deleted successfully: " + currentCoverImageFile.getName());
@@ -846,8 +847,9 @@ public class Transactions {
         scrollPane.setPadding(new Insets(10));
         scrollPane.setStyle("-fx-background: #f4f4f4; -fx-border-color: #f4f4f4;");
 
-        Scene editBookScene = new Scene(scrollPane, 1200, 1000);
+        Scene editBookScene = new Scene(scrollPane, 1000, 800);
         stage.setScene(editBookScene);
+
 
 
     }

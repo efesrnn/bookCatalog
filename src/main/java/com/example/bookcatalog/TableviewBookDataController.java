@@ -72,7 +72,7 @@ public class TableviewBookDataController {
             coverImageView.setImage(image);
         } else {
             // Varsayılan bir görüntü ayarlama
-            coverImageView.setImage(new Image("file:src/coverImages/default_image.jpg"));
+            coverImageView.setImage(new Image("file:coverImages/default_image.jpg"));
         }
 
         System.out.println("Detailed book information layout has opened.");

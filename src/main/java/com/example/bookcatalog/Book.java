@@ -41,7 +41,7 @@ public class Book {
     }
 
     public static Book fromJSON(JSONObject json) {
-        String cover = json.optString("cover", "src/coverImages");
+        String cover = json.optString("cover", "coverImages");
         String title = json.getString("title");
         String subtitle = json.optString("subtitle", "");
         List<String> authors = json.getJSONArray("authors").toList().stream()
