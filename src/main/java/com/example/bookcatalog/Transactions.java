@@ -606,26 +606,32 @@ public class Transactions {
             Path oldImgPath = Paths.get(oldImagePath);
             Path newImgPath = Paths.get(newImagePath);
 
+            boolean isNewIsbnDifferent = !oldIsbn.equals(newIsbn);
+
             try {
                 Files.createDirectories(Paths.get(directoryPath)); // Directory'nin var olduğundan emin oluyoruz.
                 Files.createDirectories(Paths.get(imageDirectory)); // Resim directory'sini kontrol et
-                boolean isNewIsbnDifferent = !newIsbn.equals(oldIsbn);
-                if (isNewIsbnDifferent && Files.exists(newPath)) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "This ISBN already exists. Please check the ISBN number.");
-                    alert.showAndWait();
-                    return;
-                }
 
                 JSONObject existingJson = new JSONObject(isNewIsbnDifferent ? "{}" : readJsonFile(oldPath));
+
+                // cover keyini koruma
+                String existingCover = existingJson.optString("cover", null);
+
                 updateBookDetails(existingJson, userInput);
+                if (existingCover != null && !existingCover.isEmpty()) {
+                    existingJson.put("cover", existingCover);  // Cover değerini koru
+                }
+
                 Files.writeString(newPath, existingJson.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-                if (isNewIsbnDifferent) {
+                if (!oldIsbn.equals(newIsbn)) {
                     Files.deleteIfExists(oldPath); // Eski dosyayı sil
 
                     // Kapak resmi ismini güncelle
                     if (Files.exists(oldImgPath)) {
                         Files.move(oldImgPath, newImgPath, StandardCopyOption.REPLACE_EXISTING);
+                        existingJson.put("cover", newImagePath.toString());  // Cover keyini yeni dosya yoluna güncelle
+                        Files.writeString(newPath, existingJson.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                     }
                 }
 

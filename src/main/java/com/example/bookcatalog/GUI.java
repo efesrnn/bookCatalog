@@ -276,7 +276,7 @@ public class GUI extends Application {
         if (!json.has("cover")) {
             System.out.println("Couldn't find the 'cover' key at: "+path);
             System.out.println("Creating as blank... ");
-            json.put("cover", "src/coverImages");
+            json.put("cover", "src/coverImages/default_image.jpg");
             needsUpdate = true;
         }
         if (!json.has("language")) {
